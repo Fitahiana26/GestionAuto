@@ -1,0 +1,662 @@
+-- =====================================================================
+-- SYSTÈME DE GESTION – VENTE DE VOITURES (PostgreSQL 13+)
+-- Usage : psql -d ma_base -f vente_voitures.sql
+--
+-- Pour que l'historique et les contrôles de rôles fonctionnent, l'application
+-- doit indiquer l'utilisateur connecté au début de chaque transaction :
+--     SELECT set_config('app.user_id', '<id_utilisateur>', true);
+--
+-- Structure :
+--   1. Référentiels et statuts (clé = code texte lisible)
+--   2. Tables métier
+--   3. Historique et mouvements
+--   4. Fonctions et triggers (règles métier)
+--   5. Vues (catalogue, coûts, bénéfices, dashboard)
+-- =====================================================================
+BEGIN;
+
+-- =====================================================================
+-- 1. RÉFÉRENTIELS ET STATUTS
+-- =====================================================================
+CREATE TABLE role               (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE statut_voiture     (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE statut_reservation (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE statut_vente       (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE statut_paiement    (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE mode_paiement      (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE categorie_depense  (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE carburant          (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+CREATE TABLE transmission       (code TEXT PRIMARY KEY, libelle TEXT NOT NULL);
+
+INSERT INTO role VALUES
+ ('CLIENT','Client'),('COMMERCIAL','Commercial'),('CAISSIER','Caissier'),
+ ('GESTIONNAIRE_STOCK','Gestionnaire de stock'),('COMPTABLE','Comptable'),
+ ('RESPONSABLE','Responsable'),('ADMIN','Administrateur');
+INSERT INTO statut_voiture VALUES
+ ('DISPONIBLE','Disponible'),('RESERVEE','Réservée'),('VENDUE','Vendue'),('INDISPONIBLE','Indisponible');
+INSERT INTO statut_reservation VALUES
+ ('EN_ATTENTE','En attente'),('CONFIRMEE','Confirmée'),('ANNULEE','Annulée'),
+ ('EXPIREE','Expirée'),('TRANSFORMEE','Transformée en vente');
+INSERT INTO statut_vente VALUES
+ ('EN_ATTENTE_PAIEMENT','En attente de paiement'),('PARTIELLEMENT_PAYEE','Partiellement payée'),
+ ('TOTALEMENT_PAYEE','Totalement payée'),('ANNULEE','Annulée');
+INSERT INTO statut_paiement VALUES
+ ('EN_ATTENTE','En attente'),('CONFIRME','Confirmé'),('ANNULE','Annulé');
+INSERT INTO mode_paiement VALUES
+ ('ESPECES','Espèces'),('VIREMENT','Virement'),('CHEQUE','Chèque'),
+ ('MOBILE_MONEY','Mobile money'),('CARTE','Carte bancaire');
+INSERT INTO categorie_depense VALUES
+ ('ACHAT','Achat de la voiture'),('TRANSPORT','Transport et importation'),('DOUANE','Douane'),
+ ('REPARATION','Réparation'),('ENTRETIEN','Entretien'),('NETTOYAGE','Nettoyage'),('AUTRE','Autres frais');
+INSERT INTO carburant VALUES
+ ('ESSENCE','Essence'),('DIESEL','Diesel'),('HYBRIDE','Hybride'),('ELECTRIQUE','Électrique');
+INSERT INTO transmission VALUES
+ ('MANUELLE','Manuelle'),('AUTOMATIQUE','Automatique');
+
+-- =====================================================================
+-- 2. TABLES MÉTIER
+-- =====================================================================
+-- Un seul compte pour tout le monde (client ou employé), le rôle décide des droits.
+CREATE TABLE utilisateur (
+    id           BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    email        TEXT NOT NULL,
+    mot_de_passe TEXT NOT NULL,                       -- hash (bcrypt/argon2), jamais en clair
+    nom          TEXT NOT NULL,
+    telephone    TEXT,
+    role_code    TEXT NOT NULL DEFAULT 'CLIENT' REFERENCES role(code),
+    actif        BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX ux_utilisateur_email ON utilisateur (lower(email));
+
+CREATE TABLE marque (
+    id  INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nom TEXT NOT NULL UNIQUE
+);
+CREATE TABLE modele (
+    id        INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    marque_id INT NOT NULL REFERENCES marque(id),
+    nom       TEXT NOT NULL,
+    UNIQUE (marque_id, nom)
+);
+
+-- Voiture : seulement ce qui est commercial / d'état (le détail est séparé)
+CREATE TABLE voiture (
+    id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    vin         TEXT NOT NULL UNIQUE CHECK (length(btrim(vin)) > 0),
+    modele_id   INT  NOT NULL REFERENCES modele(id),
+    statut_code TEXT NOT NULL DEFAULT 'DISPONIBLE' REFERENCES statut_voiture(code),
+    prix_achat  NUMERIC(14,2) NOT NULL CHECK (prix_achat >= 0),
+    prix_vente  NUMERIC(14,2) NOT NULL CHECK (prix_vente >= 0),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Détail voiture : caractéristiques fixes
+CREATE TABLE voiture_detail (
+    voiture_id        BIGINT PRIMARY KEY REFERENCES voiture(id),
+    annee             SMALLINT CHECK (annee BETWEEN 1900 AND 2100),
+    kilometrage       INT CHECK (kilometrage >= 0),
+    carburant_code    TEXT REFERENCES carburant(code),
+    transmission_code TEXT REFERENCES transmission(code),
+    couleur           TEXT,
+    description       TEXT
+);
+
+-- Photos, vidéos, documents
+CREATE TABLE voiture_media (
+    id         BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    voiture_id BIGINT NOT NULL REFERENCES voiture(id),
+    type       TEXT NOT NULL CHECK (type IN ('PHOTO','VIDEO','DOCUMENT')),
+    url        TEXT NOT NULL,
+    ordre      SMALLINT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE reservation (
+    id                BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    client_id         BIGINT NOT NULL REFERENCES utilisateur(id),
+    voiture_id        BIGINT NOT NULL REFERENCES voiture(id),
+    statut_code       TEXT NOT NULL DEFAULT 'EN_ATTENTE' REFERENCES statut_reservation(code),
+    prix_vente_fige   NUMERIC(14,2),                  -- figé à la confirmation
+    date_creation     TIMESTAMPTZ NOT NULL DEFAULT now(),
+    date_expiration   TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '3 days',
+    date_confirmation TIMESTAMPTZ,
+    confirme_par      BIGINT REFERENCES utilisateur(id)
+);
+-- Une voiture ne peut avoir qu'une seule réservation active (= confirmée, donc bloquante)
+CREATE UNIQUE INDEX ux_reservation_active ON reservation (voiture_id) WHERE statut_code = 'CONFIRMEE';
+
+CREATE TABLE vente (
+    id              BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    voiture_id      BIGINT NOT NULL REFERENCES voiture(id),
+    client_id       BIGINT NOT NULL REFERENCES utilisateur(id),
+    reservation_id  BIGINT UNIQUE REFERENCES reservation(id),   -- NULL = vente directe
+    prix_final      NUMERIC(14,2) NOT NULL CHECK (prix_final >= 0),
+    date_vente      DATE NOT NULL DEFAULT CURRENT_DATE,
+    statut_code     TEXT NOT NULL DEFAULT 'EN_ATTENTE_PAIEMENT' REFERENCES statut_vente(code),
+    valide_par      BIGINT REFERENCES utilisateur(id),          -- NOT NULL = vente finalisée
+    date_validation TIMESTAMPTZ,
+    created_by      BIGINT REFERENCES utilisateur(id),
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Une voiture = une seule vente non annulée
+CREATE UNIQUE INDEX ux_vente_voiture ON vente (voiture_id) WHERE statut_code <> 'ANNULEE';
+
+CREATE TABLE paiement (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    vente_id       BIGINT NOT NULL REFERENCES vente(id),
+    montant        NUMERIC(14,2) NOT NULL CHECK (montant > 0),
+    mode_code      TEXT NOT NULL REFERENCES mode_paiement(code),
+    reference      TEXT,
+    date_paiement  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    statut_code    TEXT NOT NULL DEFAULT 'CONFIRME' REFERENCES statut_paiement(code),
+    enregistre_par BIGINT NOT NULL REFERENCES utilisateur(id)
+);
+CREATE UNIQUE INDEX ux_paiement_reference ON paiement (mode_code, reference) WHERE reference IS NOT NULL;
+
+-- Dépense : montant négatif possible uniquement pour une régularisation (contre-écriture)
+CREATE TABLE depense (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    voiture_id     BIGINT REFERENCES voiture(id),     -- NULL = opération générale
+    categorie_code TEXT NOT NULL REFERENCES categorie_depense(code),
+    montant        NUMERIC(14,2) NOT NULL CHECK (montant <> 0),
+    date_depense   DATE NOT NULL DEFAULT CURRENT_DATE,
+    description    TEXT,
+    valide_par     BIGINT REFERENCES utilisateur(id),
+    created_by     BIGINT REFERENCES utilisateur(id),
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- =====================================================================
+-- 3. HISTORIQUE ET MOUVEMENTS
+-- =====================================================================
+-- Historique générique : uniquement les champs modifiés (ancien / nouveau)
+CREATE TABLE historique (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    table_nom      TEXT NOT NULL,
+    ligne_id       BIGINT NOT NULL,
+    action         TEXT NOT NULL CHECK (action IN ('INSERT','UPDATE')),
+    ancien         JSONB,
+    nouveau        JSONB,
+    utilisateur_id BIGINT REFERENCES utilisateur(id),
+    date_action    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX ix_historique_ligne ON historique (table_nom, ligne_id);
+
+-- Mouvements = changements de statut (statut_avant NULL = création / entrée en stock)
+CREATE TABLE mouvement_voiture (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    voiture_id     BIGINT NOT NULL REFERENCES voiture(id),
+    statut_avant   TEXT REFERENCES statut_voiture(code),
+    statut_apres   TEXT NOT NULL REFERENCES statut_voiture(code),
+    utilisateur_id BIGINT REFERENCES utilisateur(id),
+    date_mouvement TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE mouvement_reservation (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    reservation_id BIGINT NOT NULL REFERENCES reservation(id),
+    statut_avant   TEXT REFERENCES statut_reservation(code),
+    statut_apres   TEXT NOT NULL REFERENCES statut_reservation(code),
+    utilisateur_id BIGINT REFERENCES utilisateur(id),
+    date_mouvement TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE mouvement_vente (
+    id             BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    vente_id       BIGINT NOT NULL REFERENCES vente(id),
+    statut_avant   TEXT REFERENCES statut_vente(code),
+    statut_apres   TEXT NOT NULL REFERENCES statut_vente(code),
+    utilisateur_id BIGINT REFERENCES utilisateur(id),
+    date_mouvement TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Index de performance
+CREATE INDEX ix_voiture_statut      ON voiture (statut_code);
+CREATE INDEX ix_voiture_modele      ON voiture (modele_id);
+CREATE INDEX ix_voiture_prix        ON voiture (prix_vente);
+CREATE INDEX ix_detail_annee        ON voiture_detail (annee);
+CREATE INDEX ix_media_voiture       ON voiture_media (voiture_id);
+CREATE INDEX ix_reservation_client  ON reservation (client_id);
+CREATE INDEX ix_reservation_voiture ON reservation (voiture_id);
+CREATE INDEX ix_reservation_expir   ON reservation (date_expiration) WHERE statut_code IN ('EN_ATTENTE','CONFIRMEE');
+CREATE INDEX ix_vente_client        ON vente (client_id);
+CREATE INDEX ix_paiement_vente      ON paiement (vente_id);
+CREATE INDEX ix_depense_voiture     ON depense (voiture_id);
+CREATE INDEX ix_mvt_voiture         ON mouvement_voiture (voiture_id);
+CREATE INDEX ix_mvt_reservation     ON mouvement_reservation (reservation_id);
+CREATE INDEX ix_mvt_vente           ON mouvement_vente (vente_id);
+
+-- =====================================================================
+-- 4. FONCTIONS ET TRIGGERS
+-- =====================================================================
+CREATE FUNCTION fn_user_id() RETURNS BIGINT LANGUAGE sql STABLE AS $$
+    SELECT NULLIF(current_setting('app.user_id', true), '')::BIGINT
+$$;
+
+CREATE FUNCTION fn_a_role(p_user BIGINT, VARIADIC p_roles TEXT[]) RETURNS BOOLEAN LANGUAGE sql STABLE AS $$
+    SELECT EXISTS (SELECT 1 FROM utilisateur WHERE id = p_user AND actif AND role_code = ANY (p_roles))
+$$;
+
+-- Interdit suppression (données critiques) et modification (historique / mouvements)
+CREATE FUNCTION fn_interdire() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    RAISE EXCEPTION 'Opération % interdite sur % : utiliser un changement de statut ou une régularisation', TG_OP, TG_TABLE_NAME;
+END $$;
+
+-- Historique générique (champs modifiés uniquement). Argument : nom de la colonne clé
+CREATE FUNCTION fn_historiser() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    v_new JSONB := to_jsonb(NEW);
+    v_old JSONB;
+    v_diff_new JSONB;
+    v_diff_old JSONB;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO historique (table_nom, ligne_id, action, nouveau, utilisateur_id)
+        VALUES (TG_TABLE_NAME, (v_new ->> TG_ARGV[0])::BIGINT, 'INSERT', v_new, fn_user_id());
+    ELSE
+        v_old := to_jsonb(OLD);
+        SELECT jsonb_object_agg(key, value) INTO v_diff_new
+        FROM jsonb_each(v_new) WHERE v_old -> key IS DISTINCT FROM value;
+        IF v_diff_new IS NOT NULL THEN
+            SELECT jsonb_object_agg(k.key, v_old -> k.key) INTO v_diff_old
+            FROM jsonb_object_keys(v_diff_new) AS k(key);
+            INSERT INTO historique (table_nom, ligne_id, action, ancien, nouveau, utilisateur_id)
+            VALUES (TG_TABLE_NAME, (v_new ->> TG_ARGV[0])::BIGINT, 'UPDATE', v_diff_old, v_diff_new, fn_user_id());
+        END IF;
+    END IF;
+    RETURN NULL;
+END $$;
+
+-- Mouvements de statut. Arguments : table de mouvement, colonne FK
+CREATE FUNCTION fn_mouvement() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        EXECUTE format('INSERT INTO %I (%I, statut_avant, statut_apres, utilisateur_id) VALUES ($1, NULL, $2, $3)',
+                       TG_ARGV[0], TG_ARGV[1])
+        USING NEW.id, NEW.statut_code, fn_user_id();
+    ELSIF NEW.statut_code IS DISTINCT FROM OLD.statut_code THEN
+        EXECUTE format('INSERT INTO %I (%I, statut_avant, statut_apres, utilisateur_id) VALUES ($1, $2, $3, $4)',
+                       TG_ARGV[0], TG_ARGV[1])
+        USING NEW.id, OLD.statut_code, NEW.statut_code, fn_user_id();
+    END IF;
+    RETURN NULL;
+END $$;
+
+-- ---------- VOITURE : transitions de statut autorisées ----------
+CREATE FUNCTION fn_voiture_transition() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NOT (   (OLD.statut_code = 'DISPONIBLE'   AND NEW.statut_code IN ('RESERVEE','VENDUE','INDISPONIBLE'))
+            OR (OLD.statut_code = 'RESERVEE'     AND NEW.statut_code IN ('DISPONIBLE','VENDUE'))
+            OR (OLD.statut_code = 'INDISPONIBLE' AND NEW.statut_code = 'DISPONIBLE')) THEN
+        RAISE EXCEPTION 'Transition de voiture interdite : % -> %', OLD.statut_code, NEW.statut_code;
+    END IF;
+    RETURN NEW;
+END $$;
+
+-- ---------- RÉSERVATION ----------
+CREATE FUNCTION fn_reservation_avant() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE v_statut TEXT;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.statut_code <> 'EN_ATTENTE' THEN
+            RAISE EXCEPTION 'Une réservation démarre toujours en attente';
+        END IF;
+        IF NOT fn_a_role(NEW.client_id, 'CLIENT') THEN
+            RAISE EXCEPTION 'Seul un client actif peut réserver';
+        END IF;
+        SELECT statut_code INTO v_statut FROM voiture WHERE id = NEW.voiture_id;
+        IF v_statut IS DISTINCT FROM 'DISPONIBLE' THEN
+            RAISE EXCEPTION 'Voiture non disponible (statut : %)', v_statut;
+        END IF;
+        RETURN NEW;
+    END IF;
+
+    -- UPDATE
+    IF NEW.statut_code = OLD.statut_code THEN
+        IF (NEW.client_id, NEW.voiture_id, NEW.prix_vente_fige)
+           IS DISTINCT FROM (OLD.client_id, OLD.voiture_id, OLD.prix_vente_fige) THEN
+            RAISE EXCEPTION 'Réservation non modifiable';
+        END IF;
+        RETURN NEW;
+    END IF;
+
+    IF NOT (   (OLD.statut_code = 'EN_ATTENTE' AND NEW.statut_code IN ('CONFIRMEE','ANNULEE','EXPIREE'))
+            OR (OLD.statut_code = 'CONFIRMEE'  AND NEW.statut_code IN ('ANNULEE','EXPIREE','TRANSFORMEE'))) THEN
+        RAISE EXCEPTION 'Transition de réservation interdite : % -> %', OLD.statut_code, NEW.statut_code;
+    END IF;
+
+    IF NEW.statut_code = 'CONFIRMEE' THEN
+        IF NOT fn_a_role(fn_user_id(), 'COMMERCIAL','RESPONSABLE','ADMIN') THEN
+            RAISE EXCEPTION 'Confirmation réservée à l''entreprise (commercial / responsable / admin)';
+        END IF;
+        SELECT statut_code, prix_vente INTO v_statut, NEW.prix_vente_fige
+        FROM voiture WHERE id = NEW.voiture_id;
+        IF v_statut <> 'DISPONIBLE' THEN
+            RAISE EXCEPTION 'Voiture non disponible (statut : %)', v_statut;
+        END IF;
+        NEW.date_confirmation := now();
+        NEW.confirme_par      := fn_user_id();
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE FUNCTION fn_reservation_apres() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.statut_code = 'CONFIRMEE' THEN
+        UPDATE voiture SET statut_code = 'RESERVEE' WHERE id = NEW.voiture_id;
+    ELSIF OLD.statut_code = 'CONFIRMEE' AND NEW.statut_code IN ('ANNULEE','EXPIREE') THEN
+        UPDATE voiture SET statut_code = 'DISPONIBLE'
+        WHERE id = NEW.voiture_id AND statut_code = 'RESERVEE';
+    END IF;
+    RETURN NULL;
+END $$;
+
+-- ---------- VENTE ----------
+CREATE FUNCTION fn_vente_avant() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    r        reservation%ROWTYPE;
+    v_statut TEXT;
+    v_prix   NUMERIC;
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        IF NEW.reservation_id IS NOT NULL THEN
+            SELECT * INTO r FROM reservation WHERE id = NEW.reservation_id;
+            IF NOT FOUND OR r.statut_code <> 'CONFIRMEE'
+               OR r.voiture_id <> NEW.voiture_id OR r.client_id <> NEW.client_id THEN
+                RAISE EXCEPTION 'Réservation invalide pour cette vente';
+            END IF;
+            NEW.prix_final := COALESCE(NEW.prix_final, r.prix_vente_fige);
+        ELSE
+            SELECT statut_code, prix_vente INTO v_statut, v_prix FROM voiture WHERE id = NEW.voiture_id;
+            IF v_statut IS DISTINCT FROM 'DISPONIBLE' THEN
+                RAISE EXCEPTION 'Voiture non disponible pour une vente directe (statut : %)', v_statut;
+            END IF;
+            NEW.prix_final := COALESCE(NEW.prix_final, v_prix);
+        END IF;
+        NEW.statut_code     := 'EN_ATTENTE_PAIEMENT';
+        NEW.valide_par      := NULL;
+        NEW.date_validation := NULL;
+        RETURN NEW;
+    END IF;
+
+    -- UPDATE
+    IF OLD.statut_code = 'ANNULEE' AND NEW.statut_code <> 'ANNULEE' THEN
+        RAISE EXCEPTION 'Une vente annulée ne peut pas être réactivée';
+    END IF;
+
+    IF OLD.valide_par IS NOT NULL THEN
+        IF NEW.statut_code = 'ANNULEE'
+           OR (NEW.voiture_id, NEW.client_id, NEW.reservation_id, NEW.prix_final, NEW.date_vente, NEW.valide_par)
+              IS DISTINCT FROM
+              (OLD.voiture_id, OLD.client_id, OLD.reservation_id, OLD.prix_final, OLD.date_vente, OLD.valide_par) THEN
+            RAISE EXCEPTION 'Vente finalisée : modification interdite (utiliser une régularisation)';
+        END IF;
+    ELSIF NEW.valide_par IS NOT NULL THEN
+        IF NEW.statut_code = 'ANNULEE' THEN
+            RAISE EXCEPTION 'Impossible de valider une vente annulée';
+        END IF;
+        IF NOT fn_a_role(NEW.valide_par, 'RESPONSABLE','ADMIN') THEN
+            RAISE EXCEPTION 'Validation réservée à un responsable autorisé';
+        END IF;
+        NEW.date_validation := now();
+    END IF;
+    RETURN NEW;
+END $$;
+
+-- Finalisation : annule les autres réservations, transforme la réservation, voiture -> VENDUE
+CREATE FUNCTION fn_vente_finalisee() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE reservation SET statut_code = 'ANNULEE'
+    WHERE voiture_id = NEW.voiture_id
+      AND id IS DISTINCT FROM NEW.reservation_id
+      AND statut_code IN ('EN_ATTENTE','CONFIRMEE');
+
+    IF NEW.reservation_id IS NOT NULL THEN
+        UPDATE reservation SET statut_code = 'TRANSFORMEE' WHERE id = NEW.reservation_id;
+    END IF;
+
+    UPDATE voiture SET statut_code = 'VENDUE' WHERE id = NEW.voiture_id;
+    RETURN NULL;
+END $$;
+
+-- ---------- PAIEMENT ----------
+CREATE FUNCTION fn_paiement_avant() RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    v_vente RECORD;
+    v_deja  NUMERIC;
+BEGIN
+    SELECT statut_code, prix_final INTO v_vente FROM vente WHERE id = NEW.vente_id;
+
+    IF TG_OP = 'INSERT' THEN
+        IF NOT fn_a_role(NEW.enregistre_par, 'CAISSIER','RESPONSABLE','ADMIN') THEN
+            RAISE EXCEPTION 'Seul un caissier ou un responsable autorisé peut enregistrer un paiement';
+        END IF;
+    ELSE
+        IF (NEW.vente_id, NEW.montant, NEW.enregistre_par) IS DISTINCT FROM (OLD.vente_id, OLD.montant, OLD.enregistre_par) THEN
+            RAISE EXCEPTION 'Paiement non modifiable : annuler puis ressaisir';
+        END IF;
+        IF NOT (   NEW.statut_code = OLD.statut_code
+                OR (OLD.statut_code = 'EN_ATTENTE' AND NEW.statut_code IN ('CONFIRME','ANNULE'))
+                OR (OLD.statut_code = 'CONFIRME'   AND NEW.statut_code = 'ANNULE')) THEN
+            RAISE EXCEPTION 'Transition de paiement interdite : % -> %', OLD.statut_code, NEW.statut_code;
+        END IF;
+    END IF;
+
+    IF v_vente.statut_code = 'ANNULEE' AND NEW.statut_code <> 'ANNULE' THEN
+        RAISE EXCEPTION 'Vente annulée : paiement impossible';
+    END IF;
+
+    IF NEW.statut_code = 'CONFIRME' THEN
+        SELECT COALESCE(SUM(montant), 0) INTO v_deja
+        FROM paiement
+        WHERE vente_id = NEW.vente_id AND statut_code = 'CONFIRME' AND id IS DISTINCT FROM NEW.id;
+        IF v_deja + NEW.montant > v_vente.prix_final THEN
+            RAISE EXCEPTION 'Paiement supérieur au reste à payer (%)', v_vente.prix_final - v_deja;
+        END IF;
+    END IF;
+    RETURN NEW;
+END $$;
+
+-- Recalcule le statut de la vente à partir des paiements confirmés
+CREATE FUNCTION fn_paiement_apres() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    WITH s AS (
+        SELECT v.id,
+               CASE WHEN t.total = 0              THEN 'EN_ATTENTE_PAIEMENT'
+                    WHEN t.total < v.prix_final   THEN 'PARTIELLEMENT_PAYEE'
+                    ELSE 'TOTALEMENT_PAYEE' END AS nouveau
+        FROM vente v
+        CROSS JOIN LATERAL (
+            SELECT COALESCE(SUM(p.montant) FILTER (WHERE p.statut_code = 'CONFIRME'), 0) AS total
+            FROM paiement p WHERE p.vente_id = v.id
+        ) t
+        WHERE v.id = NEW.vente_id AND v.statut_code <> 'ANNULEE'
+    )
+    UPDATE vente v SET statut_code = s.nouveau
+    FROM s WHERE v.id = s.id AND v.statut_code <> s.nouveau;
+    RETURN NULL;
+END $$;
+
+-- ---------- DÉPENSE ----------
+CREATE FUNCTION fn_depense_avant() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_OP = 'UPDATE' AND OLD.valide_par IS NOT NULL
+       AND (NEW.voiture_id, NEW.categorie_code, NEW.montant, NEW.date_depense, NEW.valide_par)
+           IS DISTINCT FROM
+           (OLD.voiture_id, OLD.categorie_code, OLD.montant, OLD.date_depense, OLD.valide_par) THEN
+        RAISE EXCEPTION 'Dépense validée : saisir une contre-écriture (régularisation)';
+    END IF;
+    IF NEW.valide_par IS NOT NULL AND (TG_OP = 'INSERT' OR OLD.valide_par IS NULL)
+       AND NOT fn_a_role(NEW.valide_par, 'COMPTABLE','RESPONSABLE','ADMIN') THEN
+        RAISE EXCEPTION 'Validation de dépense réservée au comptable / responsable / admin';
+    END IF;
+    RETURN NEW;
+END $$;
+
+-- ---------- Fonctions utilitaires ----------
+-- Confirmer une réservation (fige le prix, bloque la voiture)
+CREATE FUNCTION fn_confirmer_reservation(p_reservation_id BIGINT, p_user_id BIGINT, p_duree INTERVAL DEFAULT '7 days')
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM set_config('app.user_id', p_user_id::TEXT, true);
+    UPDATE reservation SET statut_code = 'CONFIRMEE', date_expiration = now() + p_duree
+    WHERE id = p_reservation_id AND statut_code = 'EN_ATTENTE';
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Réservation % introuvable ou non en attente', p_reservation_id;
+    END IF;
+END $$;
+
+-- Finaliser (valider définitivement) une vente
+CREATE FUNCTION fn_finaliser_vente(p_vente_id BIGINT, p_user_id BIGINT)
+RETURNS VOID LANGUAGE plpgsql AS $$
+BEGIN
+    PERFORM set_config('app.user_id', p_user_id::TEXT, true);
+    UPDATE vente SET valide_par = p_user_id WHERE id = p_vente_id AND valide_par IS NULL;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Vente % introuvable ou déjà finalisée', p_vente_id;
+    END IF;
+END $$;
+
+-- Expire les réservations dépassées et libère les voitures
+-- À planifier (ex. pg_cron) : SELECT cron.schedule('*/5 * * * *', 'SELECT fn_expirer_reservations()');
+CREATE FUNCTION fn_expirer_reservations() RETURNS INT LANGUAGE sql AS $$
+    WITH u AS (
+        UPDATE reservation SET statut_code = 'EXPIREE'
+        WHERE statut_code IN ('EN_ATTENTE','CONFIRMEE') AND date_expiration < now()
+        RETURNING 1
+    )
+    SELECT count(*)::INT FROM u
+$$;
+
+-- ---------- Création des triggers ----------
+CREATE TRIGGER trg_voiture_transition BEFORE UPDATE OF statut_code ON voiture
+    FOR EACH ROW WHEN (OLD.statut_code IS DISTINCT FROM NEW.statut_code) EXECUTE FUNCTION fn_voiture_transition();
+
+CREATE TRIGGER trg_reservation_avant BEFORE INSERT OR UPDATE ON reservation
+    FOR EACH ROW EXECUTE FUNCTION fn_reservation_avant();
+CREATE TRIGGER trg_reservation_apres AFTER UPDATE OF statut_code ON reservation
+    FOR EACH ROW WHEN (OLD.statut_code IS DISTINCT FROM NEW.statut_code) EXECUTE FUNCTION fn_reservation_apres();
+
+CREATE TRIGGER trg_vente_avant BEFORE INSERT OR UPDATE ON vente
+    FOR EACH ROW EXECUTE FUNCTION fn_vente_avant();
+CREATE TRIGGER trg_vente_finalisee AFTER UPDATE OF valide_par ON vente
+    FOR EACH ROW WHEN (OLD.valide_par IS NULL AND NEW.valide_par IS NOT NULL) EXECUTE FUNCTION fn_vente_finalisee();
+
+CREATE TRIGGER trg_paiement_avant BEFORE INSERT OR UPDATE ON paiement
+    FOR EACH ROW EXECUTE FUNCTION fn_paiement_avant();
+CREATE TRIGGER trg_paiement_apres AFTER INSERT OR UPDATE ON paiement
+    FOR EACH ROW EXECUTE FUNCTION fn_paiement_apres();
+
+CREATE TRIGGER trg_depense_avant BEFORE INSERT OR UPDATE ON depense
+    FOR EACH ROW EXECUTE FUNCTION fn_depense_avant();
+
+-- Mouvements de statut automatiques
+CREATE TRIGGER trg_voiture_mvt AFTER INSERT OR UPDATE OF statut_code ON voiture
+    FOR EACH ROW EXECUTE FUNCTION fn_mouvement('mouvement_voiture', 'voiture_id');
+CREATE TRIGGER trg_reservation_mvt AFTER INSERT OR UPDATE OF statut_code ON reservation
+    FOR EACH ROW EXECUTE FUNCTION fn_mouvement('mouvement_reservation', 'reservation_id');
+CREATE TRIGGER trg_vente_mvt AFTER INSERT OR UPDATE OF statut_code ON vente
+    FOR EACH ROW EXECUTE FUNCTION fn_mouvement('mouvement_vente', 'vente_id');
+
+-- Historique automatique + interdiction de suppression
+DO $$
+DECLARE t TEXT;
+BEGIN
+    FOREACH t IN ARRAY ARRAY['voiture','reservation','vente','paiement','depense'] LOOP
+        EXECUTE format('CREATE TRIGGER trg_%1$s_hist AFTER INSERT OR UPDATE ON %1$I
+                        FOR EACH ROW EXECUTE FUNCTION fn_historiser(%2$L)', t, 'id');
+        EXECUTE format('CREATE TRIGGER trg_%1$s_no_delete BEFORE DELETE ON %1$I
+                        FOR EACH ROW EXECUTE FUNCTION fn_interdire()', t);
+    END LOOP;
+    FOREACH t IN ARRAY ARRAY['historique','mouvement_voiture','mouvement_reservation','mouvement_vente'] LOOP
+        EXECUTE format('CREATE TRIGGER trg_%1$s_immuable BEFORE UPDATE OR DELETE ON %1$I
+                        FOR EACH ROW EXECUTE FUNCTION fn_interdire()', t);
+    END LOOP;
+END $$;
+
+CREATE TRIGGER trg_voiture_detail_hist AFTER INSERT OR UPDATE ON voiture_detail
+    FOR EACH ROW EXECUTE FUNCTION fn_historiser('voiture_id');
+
+-- =====================================================================
+-- 5. VUES
+-- =====================================================================
+-- Catalogue public (ne montre pas le prix d'achat) : voitures disponibles ou réservées
+CREATE VIEW v_catalogue AS
+SELECT v.id AS voiture_id, v.vin, ma.nom AS marque, mo.nom AS modele,
+       d.annee, d.kilometrage, d.carburant_code, d.transmission_code, d.couleur, d.description,
+       v.prix_vente, v.statut_code, v.created_at
+FROM voiture v
+JOIN modele mo ON mo.id = v.modele_id
+JOIN marque ma ON ma.id = mo.marque_id
+LEFT JOIN voiture_detail d ON d.voiture_id = v.id
+WHERE v.statut_code IN ('DISPONIBLE','RESERVEE');
+
+-- Coût total = prix d'achat + dépenses hors catégorie ACHAT (évite le double comptage)
+CREATE VIEW v_cout_voiture AS
+SELECT v.id AS voiture_id, v.vin, v.prix_achat,
+       COALESCE(SUM(d.montant) FILTER (WHERE d.categorie_code <> 'ACHAT'), 0) AS total_depenses,
+       v.prix_achat + COALESCE(SUM(d.montant) FILTER (WHERE d.categorie_code <> 'ACHAT'), 0) AS cout_total
+FROM voiture v
+LEFT JOIN depense d ON d.voiture_id = v.id
+GROUP BY v.id;
+
+-- Paiements et reste à payer par vente (seuls les paiements confirmés comptent)
+CREATE VIEW v_vente_resume AS
+SELECT t.*, t.prix_final - t.total_paye AS reste_a_payer
+FROM (
+    SELECT ve.id AS vente_id, ve.voiture_id, ve.client_id, ve.prix_final, ve.date_vente,
+           ve.statut_code, (ve.valide_par IS NOT NULL) AS finalisee,
+           COALESCE(SUM(p.montant) FILTER (WHERE p.statut_code = 'CONFIRME'), 0) AS total_paye
+    FROM vente ve
+    LEFT JOIN paiement p ON p.vente_id = ve.id
+    GROUP BY ve.id
+) t;
+
+-- Bénéfice par voiture vendue (ventes finalisées). Filtrer sur date_vente pour une période.
+CREATE VIEW v_benefice_voiture AS
+SELECT ve.voiture_id, ve.id AS vente_id, ve.date_vente, ve.prix_final, c.cout_total,
+       ve.prix_final - c.cout_total AS benefice
+FROM vente ve
+JOIN v_cout_voiture c ON c.voiture_id = ve.voiture_id
+WHERE ve.valide_par IS NOT NULL;
+
+CREATE VIEW v_ventes_mensuelles AS
+SELECT date_trunc('month', date_vente)::DATE AS mois,
+       count(*) AS nb_ventes, SUM(prix_final) AS chiffre_affaires,
+       SUM(cout_total) AS cout_total, SUM(benefice) AS benefice
+FROM v_benefice_voiture
+GROUP BY 1
+ORDER BY 1;
+
+CREATE VIEW v_recettes_journalieres AS
+SELECT date_paiement::DATE AS jour, SUM(montant) AS recettes
+FROM paiement
+WHERE statut_code = 'CONFIRME'
+GROUP BY 1
+ORDER BY 1;
+
+CREATE VIEW v_dernieres_ventes AS
+SELECT id AS vente_id, date_vente, voiture_id, client_id, prix_final
+FROM vente WHERE valide_par IS NOT NULL
+ORDER BY date_validation DESC LIMIT 10;
+
+CREATE VIEW v_derniers_paiements AS
+SELECT id AS paiement_id, vente_id, montant, mode_code, date_paiement
+FROM paiement WHERE statut_code = 'CONFIRME'
+ORDER BY date_paiement DESC LIMIT 10;
+
+-- Tableau de bord (une seule ligne)
+CREATE VIEW v_dashboard AS
+SELECT
+    (SELECT count(*) FROM voiture)                                              AS total_voitures,
+    (SELECT count(*) FROM voiture WHERE statut_code = 'DISPONIBLE')             AS voitures_disponibles,
+    (SELECT count(*) FROM voiture WHERE statut_code = 'RESERVEE')               AS voitures_reservees,
+    (SELECT count(*) FROM voiture WHERE statut_code = 'VENDUE')                 AS voitures_vendues,
+    (SELECT count(*) FROM reservation WHERE statut_code = 'EN_ATTENTE')         AS reservations_en_attente,
+    (SELECT count(*) FROM vente WHERE valide_par IS NOT NULL)                   AS ventes_realisees,
+    (SELECT COALESCE(SUM(prix_final), 0) FROM vente WHERE valide_par IS NOT NULL) AS chiffre_affaires,
+    (SELECT COALESCE(SUM(montant), 0) FROM paiement WHERE statut_code = 'CONFIRME') AS recettes_encaissees,
+    (SELECT COALESCE(SUM(montant), 0) FROM depense)                             AS total_depenses,
+    (SELECT COALESCE(SUM(benefice), 0) FROM v_benefice_voiture)                 AS benefice_estime,
+    (SELECT COALESCE(SUM(reste_a_payer), 0) FROM v_vente_resume WHERE statut_code <> 'ANNULEE') AS reste_a_encaisser;
+
+COMMIT;
