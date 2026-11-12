@@ -1,0 +1,2082 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ton logo — Voitures en vente</title>
+<meta name="description" content="Des voitures à voir sous tous les angles, avec un prix clair. Compare, simule ton paiement et réserve un essai.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,300..900&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+@property --paint { syntax: "<color>"; inherits: true; initial-value: #1D4ED8; }
+
+:root {
+  --asphalt: #2B2F36;
+  --asphalt-2: #353A42;
+  --asphalt-3: #464C56;
+  --lane: #FFC72C;
+  --studio: #E6E8EB;
+  --paper: #F5F6F7;
+  --ink-2: #3E434B;
+  --muted: #5A606A;
+  --muted-dark: #B9BEC6;
+  --brake: #E5372B;
+  --display: "Anybody", "Arial Narrow", system-ui, sans-serif;
+  --text: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --pad: clamp(20px, 4vw, 56px);
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--text);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--asphalt);
+  background: var(--studio);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; color: inherit; }
+a { color: inherit; }
+svg { flex: none; }
+:focus-visible { outline: 3px solid var(--asphalt); outline-offset: 3px; }
+.parking :focus-visible, .site-footer :focus-visible { outline-color: var(--lane); }
+.tray :focus-visible { outline-color: var(--asphalt); }
+.sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 22px;
+  border-radius: 999px; border: 2px solid transparent;
+  font-weight: 700; font-size: 16px; line-height: 1; white-space: nowrap;
+  text-decoration: none; cursor: pointer;
+  transition: transform .15s ease, background-color .2s, color .2s, border-color .2s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.btn-lane { background: var(--lane); color: var(--asphalt); }
+.btn-lane:hover { background: #FFD45C; }
+.btn-ink { background: var(--asphalt); color: #fff; }
+.btn-ink:hover { background: #1E2126; }
+.btn-line { background: transparent; color: var(--asphalt); border-color: var(--asphalt); }
+.btn-line:hover { background: var(--asphalt); color: #fff; }
+.btn-line-light { background: transparent; color: #fff; border-color: rgba(255,255,255,.55); }
+.btn-line-light:hover { border-color: #fff; background: rgba(255,255,255,.08); }
+.btn-sm { min-height: 44px; padding: 0 16px; font-size: 15px; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 0;
+  display: grid; place-items: center; background: transparent; cursor: pointer;
+  transition: background-color .2s;
+}
+
+/* ---------- Navigation ---------- */
+.nav {
+  position: fixed; inset: 0 0 auto 0; z-index: 50;
+  display: flex; align-items: center; gap: 28px;
+  padding: 14px var(--pad);
+  transition: background-color .3s, box-shadow .3s;
+}
+.nav.scrolled {
+  background: rgba(230, 232, 235, .9);
+  -webkit-backdrop-filter: saturate(1.4) blur(14px);
+  backdrop-filter: saturate(1.4) blur(14px);
+  box-shadow: 0 1px 0 rgba(43, 47, 54, .12);
+}
+.logo {
+  display: flex; align-items: center; gap: 10px; text-decoration: none; white-space: nowrap;
+  font-family: var(--display); font-variation-settings: "wdth" 135, "wght" 800;
+  font-size: 20px; letter-spacing: -.01em;
+}
+.logo-plate {
+  position: relative; width: 34px; height: 20px; border-radius: 4px;
+  background: var(--lane); border: 2px solid var(--asphalt);
+}
+.logo-plate::after {
+  content: ""; position: absolute; left: 5px; right: 5px; top: 50%; height: 2px; margin-top: -1px;
+  background: var(--asphalt); border-radius: 1px;
+}
+.nav-links { display: flex; gap: 26px; margin-left: auto; }
+.nav-links a { position: relative; padding: 12px 0; text-decoration: none; font-weight: 600; }
+.nav-links a::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 6px; height: 2px;
+  background: currentColor; transform: scaleX(0); transform-origin: left; transition: transform .25s var(--ease);
+}
+.nav-links a:hover::after { transform: scaleX(1); }
+.nav-actions { display: flex; align-items: center; gap: 10px; }
+.fav-toggle {
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  border: 2px solid rgba(43, 47, 54, .25); background: transparent;
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer;
+  font-variant-numeric: tabular-nums; transition: background-color .2s, color .2s, border-color .2s;
+}
+.fav-toggle:hover { border-color: var(--asphalt); }
+.fav-toggle[aria-pressed="true"] { background: var(--asphalt); color: #fff; border-color: var(--asphalt); }
+.fav-toggle[aria-pressed="true"] svg { fill: var(--brake); stroke: var(--brake); }
+@media (max-width: 900px) {
+  .nav-links { display: none; }
+  .nav-actions { margin-left: auto; }
+}
+@media (max-width: 480px) {
+  .nav { gap: 12px; }
+  .logo { font-size: 17px; }
+  .nav .btn-lane { padding: 0 12px; font-size: 14px; }
+}
+
+/* ---------- Studio (hero) ---------- */
+.hero {
+  position: relative; overflow: hidden;
+  min-height: max(720px, 100svh);
+  background: radial-gradient(115% 85% at 58% 74%,
+    color-mix(in srgb, var(--paint) 7%, #F8F9FA) 0%,
+    color-mix(in srgb, var(--paint) 13%, #DDE0E4) 78%);
+  transition: --paint 1.2s ease;
+}
+#stage { position: absolute; inset: 0; z-index: 1; }
+#stage canvas {
+  display: block; width: 100%; height: 100%;
+  opacity: 0; transition: opacity .9s ease; cursor: grab;
+}
+#stage canvas:active { cursor: grabbing; }
+.webgl-ready #stage canvas { opacity: 1; }
+.fallback-car {
+  position: absolute; left: 58%; top: 58%;
+  width: min(860px, 78vw); transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.webgl-ready .fallback-car { display: none; }
+
+.hero-copy {
+  position: absolute; top: 0; left: 0; z-index: 2;
+  max-width: min(900px, 100%);
+  padding: 124px var(--pad) 0;
+  pointer-events: none;
+}
+.hero-title {
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-variation-settings: "wdth" 115, "wght" 800;
+  font-size: clamp(46px, 6.4vw, 100px);
+  line-height: .9;
+  letter-spacing: -.02em;
+}
+.hero-title .word { display: inline-block; white-space: nowrap; }
+.hero-title .ch {
+  display: inline-block;
+  animation: widen .9s var(--ease) both;
+  animation-delay: calc(var(--i) * 24ms + 150ms);
+}
+@keyframes widen {
+  from { opacity: 0; font-variation-settings: "wdth" 50, "wght" 300; transform: translateX(-.3em); }
+  to   { opacity: 1; font-variation-settings: "wdth" 115, "wght" 800; transform: none; }
+}
+.hero-sub { margin: 22px 0 0; max-width: 28em; font-size: 19px; line-height: 1.45; color: var(--ink-2); }
+.drag-hint {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin: 18px 0 0; padding: 8px 14px; border-radius: 999px;
+  background: rgba(255, 255, 255, .72); font-size: 14px; font-weight: 600;
+  transition: opacity .5s, transform .5s;
+}
+.drag-hint.off { opacity: 0; transform: translateY(6px); }
+.studio-note {
+  position: absolute; z-index: 3; top: 92px; right: var(--pad);
+  display: inline-flex; align-items: center; gap: 10px;
+  max-width: min(440px, calc(100% - 40px));
+  padding: 8px 14px; border-radius: 18px;
+  background: rgba(255, 255, 255, .8); color: var(--asphalt);
+  font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.studio-note a { color: inherit; text-underline-offset: 3px; }
+.bar3d { display: inline-block; width: 90px; height: 4px; border-radius: 2px; background: rgba(43, 47, 54, .15); overflow: hidden; }
+.bar3d i { display: block; height: 100%; background: var(--asphalt); transition: width .2s; }
+.drop-zone {
+  position: absolute; inset: 16px; z-index: 6;
+  display: grid; place-items: center; padding: 24px; text-align: center;
+  border: 3px dashed var(--asphalt); border-radius: 28px;
+  background: rgba(255, 255, 255, .78);
+  -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+  font-family: var(--display); font-variation-settings: "wdth" 110, "wght" 750;
+  font-size: clamp(22px, 2.6vw, 34px); pointer-events: none;
+}
+@media (pointer: coarse) { .drag-hint { display: none; } }
+
+.hero-bottom {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: 24px 40px; padding: 0 var(--pad) 36px;
+  pointer-events: none;
+}
+.hero-bottom > * { pointer-events: auto; }
+.hero-car-name {
+  margin: 0; font-family: var(--display);
+  font-variation-settings: "wdth" 110, "wght" 750;
+  font-size: clamp(28px, 3vw, 40px); line-height: 1;
+}
+.hero-specs { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 14px 0 20px; }
+.hero-specs div { display: flex; flex-direction: column; }
+.hero-specs dt { font-size: 13px; color: var(--ink-2); }
+.hero-specs dd { margin: 0; font-weight: 700; font-size: 18px; font-variant-numeric: tabular-nums; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.featured { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.featured-label { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+.featured-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; }
+.feat {
+  min-height: 44px; padding: 0 16px 0 12px; border-radius: 999px;
+  border: 2px solid rgba(43, 47, 54, .18); background: rgba(255, 255, 255, .62);
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; cursor: pointer;
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+.feat:hover { border-color: var(--asphalt); }
+.feat[aria-pressed="true"] { background: var(--asphalt); color: #fff; border-color: var(--asphalt); }
+.dot { width: 14px; height: 14px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2); }
+.round {
+  width: 44px; height: 44px; border-radius: 50%; padding: 0;
+  border: 2px solid rgba(43, 47, 54, .18); background: rgba(255, 255, 255, .62);
+  display: grid; place-items: center; cursor: pointer; transition: border-color .2s;
+}
+.round:hover { border-color: var(--asphalt); }
+
+@media (max-width: 820px) {
+  .hero { display: flex; flex-direction: column; min-height: auto; padding-bottom: 32px; }
+  .hero-copy { order: 1; position: relative; padding-top: 100px; }
+  #stage { order: 2; position: relative; height: min(42vh, 340px); }
+  .hero-bottom { order: 3; }
+  .fallback-car { left: 50%; top: 52%; width: 94vw; }
+  .studio-note { top: auto; bottom: 6px; right: auto; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); }
+  .hero-bottom { position: relative; padding-bottom: 0; }
+  .featured { align-items: flex-start; }
+  .featured-row { justify-content: flex-start; }
+}
+
+/* ---------- Parking ---------- */
+.parking {
+  position: relative; color: #fff;
+  padding: 104px var(--pad) 128px;
+  background-color: var(--asphalt);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .16 0 0 0 -.03'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.wrap { max-width: 1280px; margin: 0 auto; }
+.parking-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 40px; }
+.parking-title {
+  margin: 0; font-family: var(--display);
+  font-variation-settings: "wdth" 125, "wght" 800;
+  font-size: clamp(40px, 5.4vw, 72px); line-height: .95; letter-spacing: -.02em;
+}
+.parking-sub { margin: 0; max-width: 28em; font-size: 18px; color: var(--muted-dark); }
+
+.controls { margin-top: 40px; display: flex; flex-direction: column; gap: 20px; }
+.ctl-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.ctl-row.end { align-items: flex-end; }
+.search {
+  flex: 1 1 300px; display: flex; align-items: center; gap: 10px;
+  min-height: 54px; padding: 0 20px; border-radius: 999px;
+  background: var(--asphalt-2); border: 2px solid var(--asphalt-3);
+  transition: border-color .2s;
+}
+.search:focus-within { border-color: var(--lane); }
+.search input { flex: 1; min-width: 0; padding: 0; border: 0; outline: 0; background: transparent; color: #fff; font-size: 17px; }
+.search input::placeholder { color: #9EA4AD; }
+.search input::-webkit-search-cancel-button { filter: invert(1); }
+.select { display: flex; align-items: center; gap: 10px; font-weight: 600; color: var(--muted-dark); }
+.select select {
+  min-height: 50px; padding: 0 42px 0 18px; border-radius: 999px;
+  border: 2px solid var(--asphalt-3); color: #fff; font-weight: 700; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+  background: var(--asphalt-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 16px center;
+}
+.select select:focus-visible { outline: 3px solid var(--lane); outline-offset: 2px; }
+.select option { background: var(--asphalt-2); color: #fff; }
+
+.seg { display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 28px; background: var(--asphalt-2); }
+.seg button {
+  min-height: 44px; padding: 0 16px; border: 0; border-radius: 999px;
+  background: transparent; color: #fff; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+  transition: background-color .2s, color .2s;
+}
+.seg button:hover:not([aria-pressed="true"]):not(:disabled) { background: var(--asphalt-3); }
+.seg button[aria-pressed="true"] { background: var(--lane); color: var(--asphalt); }
+.seg button:disabled { opacity: .4; cursor: not-allowed; }
+.n { font-size: 13px; font-weight: 700; opacity: .72; font-variant-numeric: tabular-nums; }
+
+.budget { flex: 1 1 380px; min-width: 0; }
+.budget-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.budget-top .lbl { font-weight: 700; }
+.budget-val { font-weight: 700; color: var(--lane); font-variant-numeric: tabular-nums; }
+.hist { display: flex; align-items: flex-end; gap: 3px; height: 40px; padding: 0 12px; }
+.hist i { flex: 1; height: 4px; background: var(--asphalt-3); border-radius: 2px 2px 0 0; transition: height .45s var(--ease), background-color .2s; }
+.hist i.in { background: var(--lane); }
+.range { position: relative; height: 30px; }
+.range .track, .range .fill { position: absolute; top: 50%; height: 4px; margin-top: -2px; border-radius: 2px; pointer-events: none; }
+.range .track { left: 12px; right: 12px; background: var(--asphalt-3); }
+.range .fill { background: var(--lane); }
+.range input {
+  position: absolute; left: 0; top: 0; width: 100%; height: 30px; margin: 0;
+  background: transparent; pointer-events: none;
+  -webkit-appearance: none; appearance: none;
+}
+.range input:focus { outline: none; }
+.range input::-webkit-slider-runnable-track { height: 30px; background: transparent; }
+.range input::-moz-range-track { background: transparent; }
+.range input::-webkit-slider-thumb {
+  -webkit-appearance: none; pointer-events: auto; cursor: grab;
+  width: 24px; height: 24px; margin-top: 3px; border-radius: 50%;
+  background: var(--lane); border: 4px solid var(--asphalt); box-shadow: 0 0 0 2px var(--lane);
+}
+.range input::-moz-range-thumb {
+  pointer-events: auto; cursor: grab;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--lane); border: 4px solid var(--asphalt); box-shadow: 0 0 0 2px var(--lane);
+}
+.range input:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--lane), 0 0 0 6px #fff; }
+.range input:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--lane), 0 0 0 6px #fff; }
+
+.more { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 20px 32px; padding: 8px 0 4px; }
+.group h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--muted-dark); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  border: 2px solid var(--asphalt-3); background: transparent; color: #fff;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 600; font-size: 15px; cursor: pointer;
+  transition: background-color .2s, color .2s, border-color .2s;
+}
+.chip:hover:not(:disabled):not([aria-pressed="true"]) { border-color: #fff; }
+.chip[aria-pressed="true"] { background: #fff; color: var(--asphalt); border-color: #fff; }
+.chip:disabled { opacity: .38; cursor: not-allowed; }
+
+.aisle {
+  height: 6px; margin-top: 36px; border-radius: 1px;
+  background: repeating-linear-gradient(90deg, var(--lane) 0 56px, transparent 56px 96px);
+}
+.results-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; margin-top: 28px; }
+.count { margin: 0; font-size: 18px; }
+.count strong {
+  margin-right: 8px; font-family: var(--display);
+  font-variation-settings: "wdth" 100, "wght" 800; font-size: 30px; font-variant-numeric: tabular-nums;
+}
+.pills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.pill {
+  min-height: 44px; padding: 0 10px 0 16px; border: 0; border-radius: 999px;
+  background: var(--lane); color: var(--asphalt);
+  display: inline-flex; align-items: center; gap: 6px;
+  font-weight: 700; font-size: 14px; cursor: pointer;
+}
+.linkish {
+  min-height: 44px; padding: 0 6px; border: 0; background: none; color: #fff;
+  font-weight: 700; text-decoration: underline; text-underline-offset: 4px; cursor: pointer;
+}
+.empty {
+  margin-top: 28px; padding: 56px 24px; border: 2px dashed var(--asphalt-3);
+  display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+}
+.empty strong { font-size: 22px; }
+.empty p { margin: 0; max-width: 30em; color: var(--muted-dark); }
+
+/* Places de parking */
+.lot { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); row-gap: 56px; margin-top: 28px; }
+.bay {
+  --line: rgba(255, 255, 255, .88);
+  position: relative; display: flex; flex-direction: column; gap: 10px;
+  padding: 24px 26px 0;
+  box-shadow: inset 2px 0 0 var(--line), inset -2px 0 0 var(--line), inset 0 2px 0 var(--line);
+  transition: box-shadow .3s;
+}
+.bay:hover, .bay:focus-within { --line: var(--lane); }
+.bay-top { display: flex; align-items: center; justify-content: space-between; min-height: 44px; }
+.bay-badge { font-weight: 700; font-size: 14px; color: var(--lane); }
+.bay .icon-btn { position: relative; z-index: 2; color: #fff; }
+.bay .icon-btn:hover { background: rgba(255, 255, 255, .1); }
+.fav[aria-pressed="true"] svg { fill: var(--brake); stroke: var(--brake); }
+.bay-car { margin: 0 -8px; }
+.car-svg { display: block; width: 100%; height: auto; overflow: visible; }
+.bay .car-svg { transition: transform .7s var(--ease); }
+.bay .car-svg .wheel { transition: transform .7s var(--ease); }
+.bay:hover .car-svg { transform: translateX(-14px); }
+.bay:hover .car-svg .wheel { transform: rotate(-38deg); }
+.bay-name { margin: 6px 0 0; font-family: var(--display); font-variation-settings: "wdth" 108, "wght" 750; font-size: 26px; line-height: 1.05; }
+.bay-open { all: unset; cursor: pointer; }
+.bay-open::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.bay-open:focus-visible { outline: 3px solid var(--lane); outline-offset: 4px; }
+.bay-meta { display: flex; flex-wrap: wrap; gap: 2px 16px; margin: 0; font-size: 15px; color: var(--muted-dark); }
+.bay-price {
+  margin: 8px 0 0; font-family: var(--display);
+  font-variation-settings: "wdth" 100, "wght" 800; font-size: 30px; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.bay-month { margin: 0; font-size: 14px; color: var(--muted-dark); }
+.bay-actions {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 10px; padding: 14px 0 18px; border-top: 1px dashed rgba(255, 255, 255, .28);
+}
+.bay-actions .btn { position: relative; z-index: 2; }
+.cmp {
+  position: relative; z-index: 2; display: flex; align-items: center; gap: 8px;
+  min-height: 44px; font-weight: 600; font-size: 15px; cursor: pointer;
+}
+.cmp input { width: 20px; height: 20px; margin: 0; accent-color: var(--lane); cursor: pointer; }
+
+/* ---------- Bandeau comparateur ---------- */
+.tray {
+  position: fixed; left: 50%; bottom: 20px; z-index: 60;
+  display: flex; align-items: center; gap: 12px;
+  max-width: calc(100vw - 24px); padding: 8px 8px 8px 18px; border-radius: 999px;
+  background: var(--lane); color: var(--asphalt);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
+  transform: translate(-50%, 160%); visibility: hidden;
+  transition: transform .45s var(--ease), visibility 0s linear .45s;
+}
+.tray.show { transform: translate(-50%, 0); visibility: visible; transition: transform .45s var(--ease), visibility 0s; }
+.tray-dots { display: flex; }
+.tray-dots .dot { width: 18px; height: 18px; box-shadow: 0 0 0 2px var(--lane); }
+.tray-dots .dot + .dot { margin-left: -5px; }
+.tray-text { font-weight: 700; }
+.tray .icon-btn:hover { background: rgba(43, 47, 54, .1); }
+@media (max-width: 520px) { .tray-text { font-size: 14px; } }
+
+/* ---------- Fenêtres (fiche, comparaison) ---------- */
+dialog {
+  width: min(1080px, calc(100vw - 24px)); max-width: none;
+  max-height: calc(100svh - 24px);
+  padding: 0; border: 0; border-radius: 28px;
+  background: var(--paper); color: var(--asphalt);
+  box-shadow: 0 40px 120px rgba(0, 0, 0, .5);
+  overflow: auto; overscroll-behavior: contain;
+}
+dialog::backdrop { background: rgba(24, 27, 32, .62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.close-row { position: sticky; top: 0; z-index: 5; height: 0; display: flex; justify-content: flex-end; }
+.close {
+  width: 48px; height: 48px; margin: 14px 14px 0 0; border: 0; border-radius: 50%;
+  background: #fff; display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, .14);
+}
+.sheet { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+@media (max-width: 860px) { .sheet { grid-template-columns: 1fr; } }
+.sheet-left {
+  display: flex; flex-direction: column; gap: 20px; padding: 40px 36px 36px;
+  background: color-mix(in srgb, var(--c, #888) 13%, #ECEEF1);
+}
+.sheet-right { display: flex; flex-direction: column; gap: 32px; padding: 40px 36px 36px; }
+@media (max-width: 520px) { .sheet-left, .sheet-right { padding: 32px 20px 28px; } }
+.d-badge { margin: 0; font-weight: 700; color: var(--ink-2); }
+.d-title {
+  margin: 0; padding-right: 56px; font-family: var(--display);
+  font-variation-settings: "wdth" 112, "wght" 800;
+  font-size: clamp(32px, 4vw, 48px); line-height: .95; letter-spacing: -.01em;
+}
+.d-car { margin: 4px -8px 0; }
+.d-specs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 20px; margin: 0; }
+@media (max-width: 520px) { .d-specs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.d-specs dt { font-size: 13px; color: var(--ink-2); }
+.d-specs dd { margin: 2px 0 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.d-h3 { margin: 0 0 12px; font-family: var(--display); font-variation-settings: "wdth" 105, "wght" 750; font-size: 22px; }
+.d-hist { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.d-hist li { display: flex; align-items: flex-start; gap: 10px; }
+.d-hist svg { margin-top: 3px; }
+.d-price {
+  margin: 0; font-family: var(--display); font-variation-settings: "wdth" 100, "wght" 800;
+  font-size: clamp(34px, 4vw, 46px); line-height: 1; font-variant-numeric: tabular-nums;
+}
+.d-note { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+.fin-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.fin-row .lbl { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; }
+.fin-row output { font-weight: 700; font-variant-numeric: tabular-nums; }
+.fin-row input[type="range"] { width: 100%; height: 28px; margin: 0; accent-color: var(--asphalt); cursor: pointer; }
+.fin-result {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+  margin: 8px 0 0; padding: 18px 20px; border-radius: 18px;
+  background: var(--asphalt); color: #fff;
+}
+.fin-result strong {
+  font-family: var(--display); font-variation-settings: "wdth" 100, "wght" 800;
+  font-size: 34px; color: var(--lane); font-variant-numeric: tabular-nums;
+}
+.d-label { margin: 0 0 8px; font-weight: 600; }
+.slots { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.slot {
+  min-height: 44px; padding: 0 14px; border-radius: 12px;
+  border: 2px solid #C9CDD4; background: #fff; font-weight: 600; cursor: pointer;
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+.slot:hover { border-color: var(--asphalt); }
+.slot[aria-pressed="true"] { background: var(--asphalt); border-color: var(--asphalt); color: #fff; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 15px; }
+.field input {
+  min-height: 50px; padding: 0 14px; border-radius: 12px;
+  border: 2px solid #C9CDD4; background: #fff; font-size: 16px;
+}
+.field input:focus { outline: none; border-color: var(--asphalt); }
+.error { margin: 0 0 14px; font-weight: 600; color: #B42318; }
+.error:empty { display: none; }
+
+.cmp-wrap { padding: 40px 32px 32px; }
+@media (max-width: 520px) { .cmp-wrap { padding: 32px 16px 24px; } }
+.cmp-title {
+  margin: 0 0 24px; padding-right: 56px; font-family: var(--display);
+  font-variation-settings: "wdth" 120, "wght" 800; font-size: clamp(30px, 4vw, 44px); line-height: 1;
+}
+.cmp-scroll { overflow-x: auto; }
+.cmp-table { width: 100%; min-width: 600px; border-collapse: collapse; }
+.cmp-table th, .cmp-table td { padding: 14px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid #DCDFE4; }
+.cmp-table thead th { vertical-align: bottom; font-family: var(--display); font-variation-settings: "wdth" 105, "wght" 750; font-size: 20px; line-height: 1.1; }
+.cmp-table tbody th { width: 150px; font-weight: 600; color: var(--ink-2); }
+.cmp-mini { width: 170px; max-width: 100%; margin-bottom: 10px; }
+.cmp-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+.bar { height: 8px; margin-top: 8px; border-radius: 4px; background: #E1E4E8; overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 4px; background: var(--asphalt); transform-origin: left; }
+.best { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; background: var(--lane); font-size: 13px; font-weight: 700; }
+
+/* ---------- Vendre ---------- */
+.sell { padding: 112px var(--pad); }
+.sell-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 40px 72px; align-items: start; }
+@media (max-width: 860px) { .sell-grid { grid-template-columns: 1fr; } }
+.sell-title {
+  margin: 0; font-family: var(--display); font-variation-settings: "wdth" 125, "wght" 800;
+  font-size: clamp(40px, 5vw, 68px); line-height: .95; letter-spacing: -.02em;
+}
+.sell-text { margin: 20px 0 0; max-width: 26em; font-size: 19px; color: var(--ink-2); }
+.sell-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 28px; border-radius: 24px; background: #fff; }
+.sell-form .full { grid-column: 1 / -1; }
+.sell-form .error { margin: 0; }
+@media (max-width: 560px) { .sell-form { grid-template-columns: 1fr; padding: 20px; } }
+
+/* ---------- Pied de page ---------- */
+.site-footer { padding: 72px var(--pad) 36px; background: var(--asphalt); color: #fff; }
+.foot-grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 36px; }
+@media (max-width: 860px) { .foot-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .foot-grid { grid-template-columns: 1fr; } }
+.foot-grid h3 { margin: 0 0 10px; font-size: 15px; font-weight: 600; color: var(--muted-dark); }
+.foot-grid a { display: block; padding: 7px 0; text-decoration: none; }
+.foot-grid a:hover { text-decoration: underline; text-underline-offset: 4px; }
+.foot-grid p { margin: 0; }
+.foot-tag { margin-top: 14px !important; max-width: 22em; color: var(--muted-dark); }
+.foot-bottom { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--asphalt-3); font-size: 14px; color: var(--muted-dark); }
+
+/* ---------- Message ---------- */
+.toast {
+  position: fixed; left: 50%; bottom: 96px; z-index: 200;
+  max-width: calc(100vw - 32px); padding: 14px 20px; border-radius: 14px;
+  background: var(--asphalt); color: #fff; font-weight: 600;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .3);
+  opacity: 0; transform: translate(-50%, 16px); pointer-events: none;
+  transition: opacity .3s, transform .3s var(--ease);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .001ms !important; animation-delay: 0s !important; transition-duration: .001ms !important; }
+}
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <a class="logo" href="#top"><span class="logo-plate" aria-hidden="true"></span>Ton logo</a>
+  <nav class="nav-links" aria-label="Menu principal">
+    <a href="#parking">Acheter</a>
+    <a href="#vendre">Vendre</a>
+    <a href="#parking">Payer en plusieurs fois</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <div class="nav-actions">
+    <button class="fav-toggle" id="fav-toggle" type="button" aria-pressed="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>
+      <span id="fav-count">0</span><span class="sr"> favoris. Afficher seulement mes favoris.</span>
+    </button>
+    <button class="btn btn-lane btn-sm" type="button" id="nav-book">Réserver un essai</button>
+  </div>
+</header>
+
+<main id="top">
+
+  <section class="hero" id="hero" aria-label="Studio 3D">
+    <div id="stage"><div class="fallback-car" id="fallback-car"></div><p class="studio-note" id="studio-note" aria-live="polite" hidden></p></div>
+    <div class="drop-zone" id="drop-zone" hidden></div>
+
+    <div class="hero-copy">
+      <h1 class="hero-title" id="hero-title">Fais le tour de ta prochaine voiture.</h1>
+      <p class="hero-sub">Regarde-la sous tous les angles, compare-la avec les autres, puis réserve un essai.</p>
+      <p class="drag-hint" id="drag-hint">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>
+        Clique et glisse sur la voiture pour la faire tourner.
+      </p>
+    </div>
+
+    <div class="hero-bottom">
+      <div class="hero-info" id="hero-info">
+        <h2 class="hero-car-name" id="hero-name">&nbsp;</h2>
+        <dl class="hero-specs">
+          <div><dt>Année</dt><dd id="hs-year"></dd></div>
+          <div><dt>Kilométrage</dt><dd id="hs-km"></dd></div>
+          <div><dt>Carburant</dt><dd id="hs-fuel"></dd></div>
+          <div><dt>Prix</dt><dd id="hs-price"></dd></div>
+        </dl>
+        <div class="hero-cta">
+          <button class="btn btn-ink" type="button" id="hero-open">Voir la fiche</button>
+          <button class="btn btn-line" type="button" id="hero-book">Réserver un essai</button>
+        </div>
+      </div>
+      <div class="featured">
+        <p class="featured-label" id="feat-label">À la une</p>
+        <div class="featured-row">
+          <button class="round" type="button" id="feat-prev" aria-label="Voiture précédente">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>
+          </button>
+          <div class="featured-row" id="feat-list" role="group" aria-labelledby="feat-label"></div>
+          <button class="round" type="button" id="feat-next" aria-label="Voiture suivante">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="parking" id="parking" aria-labelledby="parking-title">
+    <div class="wrap">
+      <div class="parking-head">
+        <h2 class="parking-title" id="parking-title">Toutes nos voitures</h2>
+        <p class="parking-sub">Filtre, compare, puis mets celle qui te plaît au studio pour en faire le tour.</p>
+      </div>
+
+      <div class="controls">
+        <div class="ctl-row">
+          <label class="search">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+            <span class="sr">Rechercher une marque ou un modèle</span>
+            <input id="q" type="search" placeholder="Marque ou modèle : Prado, Tucson…" autocomplete="off">
+          </label>
+          <label class="select">Trier par
+            <select id="sort">
+              <option value="recent">Les plus récentes</option>
+              <option value="pa">Prix croissant</option>
+              <option value="pd">Prix décroissant</option>
+              <option value="km">Moins de kilomètres</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="ctl-row">
+          <div class="seg" id="seg" role="group" aria-label="Type de voiture"></div>
+        </div>
+
+        <div class="ctl-row end">
+          <div class="budget">
+            <div class="budget-top"><span class="lbl">Budget</span><span class="budget-val" id="budget-val"></span></div>
+            <div class="hist" id="hist" aria-hidden="true"></div>
+            <div class="range">
+              <span class="track"></span><span class="fill" id="range-fill"></span>
+              <input type="range" id="pmin" aria-label="Budget minimum">
+              <input type="range" id="pmax" aria-label="Budget maximum">
+            </div>
+          </div>
+          <button class="btn btn-line-light btn-sm" type="button" id="more-btn" aria-expanded="false" aria-controls="more">Plus de filtres</button>
+        </div>
+
+        <div class="more" id="more" hidden></div>
+      </div>
+
+      <div class="aisle" aria-hidden="true"></div>
+
+      <div class="results-bar">
+        <p class="count" aria-live="polite"><strong id="count">10</strong><span id="count-label">voitures correspondent</span></p>
+        <div class="pills" id="pills"></div>
+      </div>
+
+      <div class="empty" id="empty" hidden>
+        <strong>Aucune voiture ne correspond à ces filtres.</strong>
+        <p>Élargis ton budget ou enlève un filtre pour en voir plus.</p>
+        <button class="btn btn-lane" type="button" id="empty-reset">Tout effacer</button>
+      </div>
+
+      <div class="lot" id="lot"></div>
+    </div>
+  </section>
+
+  <section class="sell" id="vendre" aria-labelledby="sell-title">
+    <div class="wrap sell-grid">
+      <div>
+        <h2 class="sell-title" id="sell-title">Tu vends ta voiture ?</h2>
+        <p class="sell-text">Donne-nous quelques infos. On te rappelle avec une estimation, puis on s'occupe des photos, de l'annonce et des visites.</p>
+      </div>
+      <form class="sell-form" id="sell-form" novalidate>
+        <label class="field full">Marque et modèle<input name="model" type="text" placeholder="Ex : Toyota RAV4" autocomplete="off"></label>
+        <label class="field">Année<input name="year" type="number" inputmode="numeric" placeholder="Ex : 2019" min="1980" max="2030"></label>
+        <label class="field">Kilométrage<input name="km" type="number" inputmode="numeric" placeholder="Ex : 80000" min="0"></label>
+        <label class="field full">Ton téléphone<input name="tel" type="tel" placeholder="[NUMÉRO]" autocomplete="tel"></label>
+        <p class="error full" id="sell-err" role="alert"></p>
+        <button class="btn btn-ink full" type="submit">Demander une estimation</button>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer" id="contact">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <a class="logo" href="#top"><span class="logo-plate" aria-hidden="true"></span>Ton logo</a>
+        <p class="foot-tag">Des voitures à voir sous tous les angles, avec un prix clair.</p>
+      </div>
+      <nav aria-label="Découvrir">
+        <h3>Découvrir</h3>
+        <a href="#parking">Voitures en vente</a>
+        <a href="#vendre">Vendre ma voiture</a>
+        <a href="#parking">Payer en plusieurs fois</a>
+      </nav>
+      <nav aria-label="Aide">
+        <h3>Aide</h3>
+        <a href="#">Questions fréquentes</a>
+        <a href="#">Mentions légales</a>
+        <a href="#">Confidentialité</a>
+      </nav>
+      <div>
+        <h3>Nous joindre</h3>
+        <p>[TÉLÉPHONE]<br>[EMAIL]<br>[ADRESSE]</p>
+      </div>
+    </div>
+    <p class="foot-bottom">© <span id="year"></span> Ton logo</p>
+  </div>
+</footer>
+
+<div class="tray" id="tray">
+  <span class="tray-dots" id="tray-dots"></span>
+  <span class="tray-text" id="tray-text"></span>
+  <button class="btn btn-ink btn-sm" type="button" id="tray-open">Comparer</button>
+  <button class="icon-btn" type="button" id="tray-clear" aria-label="Vider la comparaison">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+</div>
+
+<dialog id="detail" aria-labelledby="d-title"></dialog>
+<dialog id="compare" aria-labelledby="cmp-title"></dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- Les voitures (exemples à remplacer) ----------
+     Pour chaque voiture, la partie 3D :
+       model3d  : le fichier 3D de la voiture, à mettre dans le dossier "modeles" (à côté de ce fichier HTML),
+                  par exemple "modeles/hilux.glb". Laisse "" tant que tu n'as pas de fichier :
+                  le studio affiche alors la voiture 3D simplifiée.
+                  Le fichier .js du même nom (modeles/tucson.js) sert quand on ouvre le site en double-cliquant.
+       rotate3d : si la voiture recule au lieu d'avancer quand elle arrive, mets 180.
+       credit3d : le nom de l'auteur du modèle 3D, par exemple "Jean Dupont, Sketchfab".
+       credit3dUrl : le lien vers la page du modèle 3D (le crédit devient cliquable).
+       len3d    : (facultatif) la longueur réelle de la voiture en mètres, par exemple 4.5.
+  */
+  var CARS = [
+    { id: "tucson", brand: "Hyundai", model: "Tucson", year: 2021, body: "suv", shape: "suv", fuel: "Diesel", gear: "Automatique", km: 38000, city: "Toamasina", price: 128000000, color: "#1D4ED8", badge: "Première main", history: ["1 seul propriétaire", "Factures d'entretien disponibles", "Contrôle technique OK"], model3d: "modeles/tucson.glb", rotate3d: 0, credit3d: "Ddiaz Design, Sketchfab", credit3dUrl: "https://sketchfab.com/3d-models/2022-hyundai-tucson-l-270t-6e69767042b2453ea91d533076821636" },
+    { id: "prado", brand: "Toyota", model: "Land Cruiser Prado", year: 2018, body: "suv", shape: "suv", fuel: "Diesel", gear: "Automatique", km: 98000, city: "Antananarivo", price: 185000000, color: "#3B4A5A", badge: "Vérifiée", history: ["Carnet d'entretien complet", "Pneus récents", "Jamais accidentée"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "mx5", brand: "Mazda", model: "MX-5", year: 2018, body: "sport", shape: "coupe", fuel: "Essence", gear: "Manuelle", km: 41000, city: "Antananarivo", price: 89000000, color: "#C2410C", badge: "Coup de cœur", history: ["A toujours dormi au garage", "Entretien à jour"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "hilux", brand: "Toyota", model: "Hilux", year: 2020, body: "pickup", shape: "pickup", fuel: "Diesel", gear: "Manuelle", km: 85000, city: "Mahajanga", price: 135000000, color: "#E8ECF1", badge: "Vérifiée", history: ["Usage privé", "Jamais utilisé sur chantier", "Attelage"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "swift", brand: "Suzuki", model: "Swift", year: 2022, body: "citadine", shape: "hatch", fuel: "Essence", gear: "Automatique", km: 17000, city: "Antsirabe", price: 52000000, color: "#EAB308", badge: "Presque neuve", history: ["1 seul propriétaire", "Révision faite"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "rav4", brand: "Toyota", model: "RAV4", year: 2019, body: "suv", shape: "suv", fuel: "Hybride", gear: "Automatique", km: 70000, city: "Antananarivo", price: 112000000, color: "#B91C1C", badge: "Baisse de prix", history: ["Entretien chez le concessionnaire", "Batterie hybride contrôlée"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "sportage", brand: "Kia", model: "Sportage", year: 2020, body: "suv", shape: "suv", fuel: "Diesel", gear: "Automatique", km: 55000, city: "Antananarivo", price: 98000000, color: "#0F766E", badge: "", history: ["Pneus neufs", "Contrôle technique OK"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "yaris", brand: "Toyota", model: "Yaris", year: 2019, body: "citadine", shape: "hatch", fuel: "Essence", gear: "Manuelle", km: 62000, city: "Antananarivo", price: 45000000, color: "#E63946", badge: "", history: ["Idéale en ville", "Climatisation révisée"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "classec", brand: "Mercedes-Benz", model: "Classe C Coupé", year: 2017, body: "sport", shape: "coupe", fuel: "Essence", gear: "Automatique", km: 76000, city: "Toamasina", price: 118000000, color: "#9CA3AF", badge: "Vérifiée", history: ["Carnet et factures", "Intérieur cuir"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" },
+    { id: "navara", brand: "Nissan", model: "Navara", year: 2019, body: "pickup", shape: "pickup", fuel: "Diesel", gear: "Manuelle", km: 110000, city: "Fianarantsoa", price: 105000000, color: "#B45309", badge: "", history: ["Double cabine", "Attelage"], model3d: "", rotate3d: 0, credit3d: "", credit3dUrl: "" }
+  ];
+  var FEATURED = ["tucson", "prado", "mx5", "hilux", "swift"];
+  var BODIES = [["all", "Tout"], ["suv", "SUV et 4x4"], ["pickup", "Pick-up"], ["citadine", "Citadines"], ["sport", "Sportives"]];
+  var BODY_LABEL = { suv: "SUV et 4x4", pickup: "Pick-up", citadine: "Citadine", sport: "Sportive" };
+  var GROUPS = [
+    { key: "fuel", title: "Carburant", opts: [["Essence", "Essence"], ["Diesel", "Diesel"], ["Hybride", "Hybride"], ["Électrique", "Électrique"]], test: function (c, v) { return c.fuel === v; } },
+    { key: "gear", title: "Boîte de vitesses", opts: [["Automatique", "Automatique"], ["Manuelle", "Manuelle"]], test: function (c, v) { return c.gear === v; } },
+    { key: "year", title: "Année", opts: [[2018, "2018 et plus"], [2020, "2020 et plus"], [2022, "2022 et plus"]], test: function (c, v) { return c.year >= v; } },
+    { key: "city", title: "Ville", opts: [["Antananarivo", "Antananarivo"], ["Toamasina", "Toamasina"], ["Mahajanga", "Mahajanga"], ["Antsirabe", "Antsirabe"], ["Fianarantsoa", "Fianarantsoa"]], test: function (c, v) { return c.city === v; } }
+  ];
+  var byId = {};
+  CARS.forEach(function (c) { byId[c.id] = c; });
+
+  /* ---------- Outils ---------- */
+  var nf = new Intl.NumberFormat("fr-FR");
+  function fmt(n) { return nf.format(Math.round(n)); }
+  function fmtM(n) { return nf.format(Math.round(n / 1e6)) + " M"; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]; }); }
+  function $(id) { return document.getElementById(id); }
+  function mix(a, b, t) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    return "#" + [16, 8, 0].map(function (s) {
+      var x = (pa >> s) & 255, y = (pb >> s) & 255;
+      return Math.round(x + (y - x) * t).toString(16).padStart(2, "0");
+    }).join("");
+  }
+  function monthly(price, apportPct, months, rate) {
+    var P = price * (1 - apportPct / 100);
+    var r = rate / 100 / 12;
+    return r === 0 ? P / months : P * r / (1 - Math.pow(1 + r, -months));
+  }
+  function tween(el, to, dur, format) {
+    var from = parseFloat(el.getAttribute("data-v") || "0");
+    el.setAttribute("data-v", String(to));
+    if (reduce || from === to) { el.textContent = format(to); return; }
+    var t0 = performance.now();
+    function step(now) {
+      var t = Math.min(1, (now - t0) / dur);
+      var e = 1 - Math.pow(1 - t, 3);
+      el.textContent = format(from + (to - from) * e);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  var ICON = {
+    heart: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+    x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    xl: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F7A3D" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>',
+    turn: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg>'
+  };
+
+  /* ---------- Dessin des voitures (vue de côté) ---------- */
+  var SH = {
+    coupe: { body: "M40 164L40 142Q42 120 72 114L192 100Q236 60 304 52L382 52Q444 56 494 94L548 106Q566 110 566 132L566 164Q563 172 550 172L512 172A52 52 0 0 0 408 172L196 172A52 52 0 0 0 92 172L54 172Q40 172 40 164Z", win: "M210 100Q246 66 304 60L334 60L334 100ZM346 60L380 60Q432 64 470 96L470 100L346 100Z", light: "M42 132Q50 122 76 118L78 126Q56 130 44 138Z", shine: "M80 126L548 118L548 122L80 131Z", tail: "M554 112h12v14h-12z", extra: "", a: 144, b: 460, y: 172, r: 42 },
+    suv: { body: "M36 162L36 126Q38 106 64 102L168 94L218 48Q224 42 236 42L498 42Q518 42 528 58L556 98Q566 102 566 120L566 162Q564 170 552 170L514 170A54 54 0 0 0 406 170L198 170A54 54 0 0 0 90 170L48 170Q36 170 36 162Z", win: "M182 94L226 52L300 52L300 94ZM312 52L404 52L404 94L312 94ZM416 52L494 52Q508 52 516 64L536 94L416 94Z", light: "M38 116Q44 106 66 104L68 112Q50 114 40 122Z", shine: "M70 120L556 114L556 118L70 125Z", tail: "M556 108h10v18h-10z", extra: "M240 36h250v5h-250z", a: 144, b: 460, y: 170, r: 44 },
+    hatch: { body: "M50 164L50 132Q52 114 80 110L172 100Q214 54 282 48L432 48Q470 50 498 80L530 114Q540 120 540 138L540 164Q538 172 526 172L488 172A50 50 0 0 0 388 172L208 172A50 50 0 0 0 108 172L62 172Q50 172 50 164Z", win: "M188 100Q224 62 282 56L330 56L330 100ZM342 56L428 56Q462 58 486 86L496 100L342 100Z", light: "M52 124Q58 114 82 112L84 120Q64 122 54 130Z", shine: "M84 128L534 124L534 128L84 133Z", tail: "M530 118h10v16h-10z", extra: "", a: 158, b: 438, y: 172, r: 40 },
+    pickup: { body: "M30 160L30 122Q32 104 58 100L160 92L206 46Q212 40 224 40L330 40Q344 40 346 54L350 98L566 98Q572 98 572 106L572 160Q570 170 558 170L512 170A52 52 0 0 0 408 170L196 170A52 52 0 0 0 92 170L42 170Q30 170 30 160Z", win: "M174 92L214 50L262 50L262 92ZM274 50L330 50Q336 50 337 58L340 92L274 92Z", light: "M32 112Q38 102 60 100L62 108Q44 110 34 118Z", shine: "M64 118L566 114L566 118L64 123Z", tail: "M564 108h8v18h-8z", extra: "M350 98L566 98L566 106L350 106Z", a: 144, b: 460, y: 170, r: 42 }
+  };
+  function wheelSVG(cx, s, uid) {
+    var r = s.r, r2 = Math.round(r * 0.62), out = "";
+    for (var k = 0; k < 5; k++) {
+      out += '<rect x="' + (cx - 3) + '" y="' + (s.y - r2 + 3) + '" width="6" height="' + (r2 - 5) + '" rx="3" fill="#6B727C" transform="rotate(' + (k * 72) + ' ' + cx + ' ' + s.y + ')"/>';
+    }
+    return '<g class="wheel" style="transform-origin:' + cx + 'px ' + s.y + 'px">' +
+      '<circle cx="' + cx + '" cy="' + s.y + '" r="' + r + '" fill="#16181C"/>' +
+      '<circle cx="' + cx + '" cy="' + s.y + '" r="' + (r - 6) + '" fill="#23262B"/>' +
+      '<circle cx="' + cx + '" cy="' + s.y + '" r="' + r2 + '" fill="url(#rim-' + uid + ')"/>' + out +
+      '<circle cx="' + cx + '" cy="' + s.y + '" r="' + Math.round(r * 0.17) + '" fill="#3A3E46"/></g>';
+  }
+  function carSVG(c, uid, label) {
+    var s = SH[c.shape], col = c.color;
+    var hi = mix(col, "#ffffff", 0.38), lo = mix(col, "#000000", 0.38);
+    var gy = s.y + s.r;
+    return '<svg class="car-svg" viewBox="0 0 600 236" ' + (label === false ? 'aria-hidden="true"' : 'role="img" aria-label="' + esc(c.brand + " " + c.model) + ', vue de côté"') + '>' +
+      '<defs>' +
+      '<linearGradient id="b-' + uid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + hi + '"/><stop offset=".48" stop-color="' + col + '"/><stop offset="1" stop-color="' + lo + '"/></linearGradient>' +
+      '<linearGradient id="w-' + uid + '" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#465264"/><stop offset=".5" stop-color="#141920"/><stop offset="1" stop-color="#26303C"/></linearGradient>' +
+      '<radialGradient id="rim-' + uid + '" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#EEF1F4"/><stop offset=".6" stop-color="#A3AAB4"/><stop offset="1" stop-color="#5F656E"/></radialGradient>' +
+      '</defs>' +
+      '<ellipse cx="300" cy="' + gy + '" rx="272" ry="10" fill="#000" opacity=".3"/>' +
+      '<path d="' + s.body + '" fill="url(#b-' + uid + ')"/>' +
+      '<path d="' + s.win + '" fill="url(#w-' + uid + ')"/>' +
+      (s.extra ? '<path d="' + s.extra + '" fill="#000" opacity=".25"/>' : "") +
+      '<path d="' + s.shine + '" fill="#fff" opacity=".38"/>' +
+      '<path d="' + s.light + '" fill="#FFF7DA"/>' +
+      '<path d="' + s.tail + '" fill="#E5372B"/>' +
+      wheelSVG(s.a, s, uid) + wheelSVG(s.b, s, uid) +
+      '</svg>';
+  }
+
+  /* ---------- État ---------- */
+  var prices = CARS.map(function (c) { return c.price; });
+  var PMIN = Math.floor(Math.min.apply(null, prices) / 5e6) * 5e6;
+  var PMAX = Math.ceil(Math.max.apply(null, prices) / 5e6) * 5e6;
+  var state = {
+    q: "", body: "all", min: PMIN, max: PMAX,
+    fuel: null, gear: null, year: 0, city: null,
+    onlyFav: false, sort: "recent",
+    favs: new Set(), cmp: new Set(), studio: FEATURED[0]
+  };
+  var SORTS = {
+    recent: function (a, b) { return (b.year - a.year) || (a.km - b.km); },
+    pa: function (a, b) { return a.price - b.price; },
+    pd: function (a, b) { return b.price - a.price; },
+    km: function (a, b) { return a.km - b.km; }
+  };
+  function matches(c, ex) {
+    var q = state.q.trim().toLowerCase();
+    if (ex !== "q" && q && (c.brand + " " + c.model).toLowerCase().indexOf(q) < 0) return false;
+    if (ex !== "body" && state.body !== "all" && c.body !== state.body) return false;
+    if (ex !== "budget" && (c.price < state.min || c.price > state.max)) return false;
+    if (ex !== "fuel" && state.fuel && c.fuel !== state.fuel) return false;
+    if (ex !== "gear" && state.gear && c.gear !== state.gear) return false;
+    if (ex !== "year" && state.year && c.year < state.year) return false;
+    if (ex !== "city" && state.city && c.city !== state.city) return false;
+    if (ex !== "fav" && state.onlyFav && !state.favs.has(c.id)) return false;
+    return true;
+  }
+
+  /* ---------- Titre animé ---------- */
+  (function () {
+    var h1 = $("hero-title");
+    var text = h1.textContent.trim();
+    var i = 0;
+    h1.setAttribute("aria-label", text);
+    h1.innerHTML = '<span aria-hidden="true">' + text.split(" ").map(function (w) {
+      return '<span class="word">' + Array.from(w).map(function (ch) {
+        return '<span class="ch" style="--i:' + (i++) + '">' + esc(ch) + "</span>";
+      }).join("") + "</span>";
+    }).join(" ") + "</span>";
+  })();
+
+  /* ---------- Navigation ---------- */
+  var nav = $("nav");
+  function onScroll() { nav.classList.toggle("scrolled", window.scrollY > 24); }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  /* ---------- Studio ---------- */
+  var hero = $("hero"), heroInfo = $("hero-info"), featList = $("feat-list");
+  featList.innerHTML = FEATURED.map(function (id) {
+    var c = byId[id];
+    return '<button class="feat" type="button" data-id="' + id + '" aria-pressed="false"><span class="dot" style="background:' + c.color + '"></span>' + esc(c.model) + "</button>";
+  }).join("");
+
+  function setStudio(id, first) {
+    var c = byId[id];
+    if (!c) return;
+    state.studio = id;
+    hero.style.setProperty("--paint", c.color);
+    $("hero-name").textContent = c.brand + " " + c.model;
+    $("hs-year").textContent = c.year;
+    $("hs-km").textContent = fmt(c.km) + " km";
+    $("hs-fuel").textContent = c.fuel;
+    $("hs-price").textContent = fmt(c.price) + " Ar";
+    if (!first && !reduce) {
+      heroInfo.animate([{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 500, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
+    featList.querySelectorAll(".feat").forEach(function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-id") === id)); });
+    var fb = $("fallback-car");
+    fb.innerHTML = carSVG(c, "hero");
+    if (!reduce && !document.body.classList.contains("webgl-ready")) {
+      fb.animate([{ transform: "translate(calc(-50% + 180px), -50%)", opacity: 0 }, { transform: "translate(-50%, -50%)", opacity: 1 }], { duration: 800, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
+    window.__studioCar = c;
+    window.dispatchEvent(new CustomEvent("studio:car", { detail: c }));
+  }
+  function stepStudio(dir) {
+    var i = FEATURED.indexOf(state.studio);
+    var n = i < 0 ? 0 : (i + dir + FEATURED.length) % FEATURED.length;
+    setStudio(FEATURED[n]);
+  }
+  function sendToStudio(id) {
+    var far = window.scrollY > 200;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
+    setTimeout(function () { setStudio(id); }, far && !reduce ? 550 : 0);
+  }
+  featList.addEventListener("click", function (e) {
+    var b = e.target.closest(".feat");
+    if (b) setStudio(b.getAttribute("data-id"));
+  });
+  $("feat-prev").addEventListener("click", function () { stepStudio(-1); });
+  $("feat-next").addEventListener("click", function () { stepStudio(1); });
+  $("hero-open").addEventListener("click", function (e) { openDetail(state.studio, e.currentTarget, false); });
+  $("hero-book").addEventListener("click", function (e) { openDetail(state.studio, e.currentTarget, true); });
+  $("nav-book").addEventListener("click", function (e) { openDetail(state.studio, e.currentTarget, true); });
+
+  /* ---------- Parking : construction ---------- */
+  var lot = $("lot");
+  lot.innerHTML = CARS.map(function (c) {
+    var name = esc(c.brand + " " + c.model);
+    return '<article class="bay" data-id="' + c.id + '">' +
+      '<div class="bay-top">' + (c.badge ? '<span class="bay-badge">' + esc(c.badge) + "</span>" : "<span></span>") +
+      '<button class="icon-btn fav" type="button" data-act="fav" aria-pressed="false" aria-label="Ajouter ' + name + ' aux favoris">' + ICON.heart + "</button></div>" +
+      '<div class="bay-car">' + carSVG(c, "bay-" + c.id, false) + "</div>" +
+      '<h3 class="bay-name"><button class="bay-open" type="button" data-act="open">' + name + "</button></h3>" +
+      '<p class="bay-meta"><span>' + c.year + "</span><span>" + fmt(c.km) + " km</span><span>" + esc(c.fuel) + "</span><span>" + esc(c.city) + "</span></p>" +
+      '<p class="bay-price">' + fmt(c.price) + " Ar</p>" +
+      '<p class="bay-month">ou environ ' + fmt(Math.round(monthly(c.price, 20, 48, 12) / 1000) * 1000) + " Ar par mois avec 20 % d'apport</p>" +
+      '<div class="bay-actions">' +
+      '<button class="btn btn-line-light btn-sm" type="button" data-act="studio">' + ICON.turn + "Mettre au studio</button>" +
+      '<label class="cmp"><input type="checkbox" data-act="cmp"> Comparer</label>' +
+      "</div></article>";
+  }).join("");
+  var bays = new Map();
+  lot.querySelectorAll(".bay").forEach(function (el) { bays.set(el.getAttribute("data-id"), el); });
+
+  var seg = $("seg");
+  seg.innerHTML = BODIES.map(function (b) {
+    return '<button type="button" data-v="' + b[0] + '" aria-pressed="' + (b[0] === "all") + '">' + b[1] + ' <span class="n"></span></button>';
+  }).join("");
+
+  var more = $("more");
+  more.innerHTML = GROUPS.map(function (g) {
+    return '<div class="group"><h3 id="g-' + g.key + '">' + g.title + '</h3><div class="chips" role="group" aria-labelledby="g-' + g.key + '">' +
+      g.opts.map(function (o) {
+        return '<button type="button" class="chip" data-g="' + g.key + '" data-v="' + o[0] + '" aria-pressed="false">' + o[1] + ' <span class="n"></span></button>';
+      }).join("") + "</div></div>";
+  }).join("");
+
+  var hist = $("hist"), BINS = 12;
+  hist.innerHTML = new Array(BINS + 1).join("<i></i>");
+  var pmin = $("pmin"), pmax = $("pmax");
+  [pmin, pmax].forEach(function (el) { el.min = PMIN; el.max = PMAX; el.step = 1e6; });
+  pmin.value = PMIN; pmax.value = PMAX;
+
+  /* ---------- Parking : affichage ---------- */
+  function updateBudgetUI() {
+    $("budget-val").textContent = fmtM(state.min) + " – " + fmtM(state.max) + " Ar";
+    var span = PMAX - PMIN;
+    var a = (state.min - PMIN) / span, b = (state.max - PMIN) / span;
+    var fill = $("range-fill");
+    fill.style.left = "calc(12px + (100% - 24px) * " + a + ")";
+    fill.style.right = "calc(12px + (100% - 24px) * " + (1 - b) + ")";
+    pmin.style.zIndex = a > 0.5 ? 3 : 1;
+    var binW = span / BINS, counts = new Array(BINS).fill(0);
+    CARS.forEach(function (c) {
+      if (!matches(c, "budget")) return;
+      var k = Math.min(BINS - 1, Math.floor((c.price - PMIN) / binW));
+      counts[k]++;
+    });
+    var top = Math.max.apply(null, counts.concat([1]));
+    hist.querySelectorAll("i").forEach(function (bar, k) {
+      var lo = PMIN + k * binW, hi = lo + binW;
+      bar.style.height = (4 + 36 * counts[k] / top) + "px";
+      bar.classList.toggle("in", hi > state.min && lo <= state.max);
+    });
+  }
+
+  var shownCount = CARS.length;
+  function render(instant) {
+    var list = CARS.filter(function (c) { return matches(c); }).sort(SORTS[state.sort] || SORTS.recent);
+    var animate = !reduce && !instant;
+    var first = new Map();
+    if (animate) bays.forEach(function (el, id) { if (!el.hidden) first.set(id, el.getBoundingClientRect()); });
+
+    var visible = new Set(list.map(function (c) { return c.id; }));
+    list.forEach(function (c) { lot.appendChild(bays.get(c.id)); });
+    CARS.forEach(function (c) {
+      var el = bays.get(c.id);
+      el.hidden = !visible.has(c.id);
+      if (el.hidden) lot.appendChild(el);
+    });
+
+    if (animate) {
+      list.forEach(function (c) {
+        var el = bays.get(c.id), r = el.getBoundingClientRect(), f = first.get(c.id);
+        if (f) {
+          var dx = f.left - r.left, dy = f.top - r.top;
+          if (Math.abs(dx) + Math.abs(dy) > 1) {
+            el.animate([{ transform: "translate(" + dx + "px," + dy + "px)" }, { transform: "none" }], { duration: 600, easing: "cubic-bezier(.2,.8,.2,1)" });
+          }
+        } else {
+          el.animate([{ opacity: 0, transform: "translateY(18px)" }, { opacity: 1, transform: "none" }], { duration: 450, easing: "ease-out" });
+        }
+      });
+    }
+
+    var n = list.length;
+    var countEl = $("count");
+    countEl.hidden = n === 0;
+    if (n > 0) {
+      var from = shownCount;
+      countEl.setAttribute("data-v", String(from));
+      tween(countEl, n, 450, function (v) { return String(Math.round(v)); });
+    }
+    shownCount = n;
+    $("count-label").textContent = n === 0 ? "Aucune voiture ne correspond" : (n === 1 ? "voiture correspond" : "voitures correspondent");
+    $("empty").hidden = n > 0;
+
+    seg.querySelectorAll("button").forEach(function (b) {
+      var v = b.getAttribute("data-v");
+      var cnt = CARS.filter(function (c) { return matches(c, "body") && (v === "all" || c.body === v); }).length;
+      var on = state.body === v;
+      b.querySelector(".n").textContent = cnt;
+      b.setAttribute("aria-pressed", String(on));
+      b.disabled = cnt === 0 && !on;
+    });
+    more.querySelectorAll(".chip").forEach(function (b) {
+      var g = b.getAttribute("data-g"), raw = b.getAttribute("data-v");
+      var v = g === "year" ? Number(raw) : raw;
+      var group = GROUPS.filter(function (x) { return x.key === g; })[0];
+      var cnt = CARS.filter(function (c) { return matches(c, g) && group.test(c, v); }).length;
+      var on = state[g] === v;
+      b.querySelector(".n").textContent = cnt;
+      b.setAttribute("aria-pressed", String(on));
+      b.disabled = cnt === 0 && !on;
+    });
+    updateBudgetUI();
+    renderPills();
+  }
+
+  function renderPills() {
+    var p = [];
+    if (state.q.trim()) p.push(["q", "« " + state.q.trim() + " »"]);
+    if (state.body !== "all") p.push(["body", BODY_LABEL[state.body]]);
+    if (state.min > PMIN || state.max < PMAX) p.push(["budget", fmtM(state.min) + " – " + fmtM(state.max) + " Ar"]);
+    if (state.fuel) p.push(["fuel", state.fuel]);
+    if (state.gear) p.push(["gear", state.gear]);
+    if (state.year) p.push(["year", state.year + " et plus"]);
+    if (state.city) p.push(["city", state.city]);
+    if (state.onlyFav) p.push(["fav", "Mes favoris"]);
+    $("pills").innerHTML = p.map(function (x) {
+      return '<button type="button" class="pill" data-k="' + x[0] + '" aria-label="Retirer le filtre ' + esc(x[1]) + '">' + esc(x[1]) + ICON.x + "</button>";
+    }).join("") + (p.length > 1 ? '<button type="button" class="linkish" data-k="all">Tout effacer</button>' : "");
+  }
+
+  function clearFilter(k) {
+    if (k === "q" || k === "all") { state.q = ""; $("q").value = ""; }
+    if (k === "body" || k === "all") state.body = "all";
+    if (k === "budget" || k === "all") { state.min = PMIN; state.max = PMAX; pmin.value = PMIN; pmax.value = PMAX; }
+    if (k === "fuel" || k === "all") state.fuel = null;
+    if (k === "gear" || k === "all") state.gear = null;
+    if (k === "year" || k === "all") state.year = 0;
+    if (k === "city" || k === "all") state.city = null;
+    if (k === "fav" || k === "all") { state.onlyFav = false; $("fav-toggle").setAttribute("aria-pressed", "false"); }
+    render();
+  }
+
+  /* ---------- Parking : interactions ---------- */
+  $("q").addEventListener("input", function (e) { state.q = e.target.value; render(); });
+  $("sort").addEventListener("change", function (e) { state.sort = e.target.value; render(); });
+  seg.addEventListener("click", function (e) {
+    var b = e.target.closest("button");
+    if (!b || b.disabled) return;
+    state.body = b.getAttribute("data-v");
+    render();
+  });
+  more.addEventListener("click", function (e) {
+    var b = e.target.closest(".chip");
+    if (!b || b.disabled) return;
+    var g = b.getAttribute("data-g"), raw = b.getAttribute("data-v");
+    var v = g === "year" ? Number(raw) : raw;
+    state[g] = state[g] === v ? (g === "year" ? 0 : null) : v;
+    render();
+  });
+  $("more-btn").addEventListener("click", function (e) {
+    var open = more.hidden;
+    more.hidden = !open;
+    e.currentTarget.setAttribute("aria-expanded", String(open));
+    e.currentTarget.textContent = open ? "Moins de filtres" : "Plus de filtres";
+    if (open && !reduce) more.animate([{ opacity: 0, transform: "translateY(-8px)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: "ease-out" });
+  });
+  var budgetTimer;
+  function onBudget(e) {
+    var a = Number(pmin.value), b = Number(pmax.value), gap = 5e6;
+    if (a > b - gap) {
+      if (e.target === pmin) { a = Math.max(PMIN, b - gap); pmin.value = a; }
+      else { b = Math.min(PMAX, a + gap); pmax.value = b; }
+    }
+    state.min = a; state.max = b;
+    updateBudgetUI();
+    clearTimeout(budgetTimer);
+    budgetTimer = setTimeout(function () { render(); }, 140);
+  }
+  pmin.addEventListener("input", onBudget);
+  pmax.addEventListener("input", onBudget);
+  $("pills").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-k]");
+    if (b) clearFilter(b.getAttribute("data-k"));
+  });
+  $("empty-reset").addEventListener("click", function () { clearFilter("all"); });
+
+  lot.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-act]");
+    if (!t) return;
+    var bay = t.closest(".bay"), id = bay.getAttribute("data-id"), act = t.getAttribute("data-act");
+    if (act === "fav") toggleFav(id, t);
+    else if (act === "studio") sendToStudio(id);
+    else if (act === "open") openDetail(id, bay, false);
+  });
+  lot.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.getAttribute("data-act") !== "cmp") return;
+    toggleCmp(t.closest(".bay").getAttribute("data-id"), t.checked, t);
+  });
+
+  /* ---------- Favoris ---------- */
+  function toggleFav(id, btn) {
+    var on = !state.favs.has(id);
+    if (on) state.favs.add(id); else state.favs.delete(id);
+    btn.setAttribute("aria-pressed", String(on));
+    var c = byId[id];
+    btn.setAttribute("aria-label", (on ? "Retirer " : "Ajouter ") + c.brand + " " + c.model + (on ? " des favoris" : " aux favoris"));
+    if (on && !reduce) btn.animate([{ transform: "scale(1)" }, { transform: "scale(1.35)" }, { transform: "scale(1)" }], { duration: 380, easing: "cubic-bezier(.3,1.6,.5,1)" });
+    $("fav-count").textContent = state.favs.size;
+    if (state.onlyFav) render();
+  }
+  $("fav-toggle").addEventListener("click", function (e) {
+    if (!state.favs.size && !state.onlyFav) { toast("Touche le cœur d'une voiture pour l'ajouter à tes favoris."); return; }
+    state.onlyFav = !state.onlyFav;
+    e.currentTarget.setAttribute("aria-pressed", String(state.onlyFav));
+    render();
+    $("parking").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+  });
+
+  /* ---------- Comparateur ---------- */
+  var tray = $("tray");
+  function toggleCmp(id, on, input) {
+    if (on && state.cmp.size >= 3) {
+      input.checked = false;
+      toast("Tu peux comparer 3 voitures au maximum.");
+      return;
+    }
+    if (on) state.cmp.add(id); else state.cmp.delete(id);
+    updateTray();
+  }
+  function updateTray() {
+    var n = state.cmp.size;
+    tray.classList.toggle("show", n > 0);
+    $("tray-dots").innerHTML = Array.from(state.cmp).map(function (id) { return '<span class="dot" style="background:' + byId[id].color + '"></span>'; }).join("");
+    $("tray-text").textContent = n === 1 ? "1 voiture choisie, ajoute-en une autre" : n + " voitures à comparer";
+    $("tray-open").disabled = n < 2;
+    lot.querySelectorAll('[data-act="cmp"]').forEach(function (cb) { cb.checked = state.cmp.has(cb.closest(".bay").getAttribute("data-id")); });
+  }
+  $("tray-clear").addEventListener("click", function () { state.cmp.clear(); updateTray(); });
+  $("tray-open").addEventListener("click", function (e) { openCompare(e.currentTarget); });
+
+  var cmpDlg = $("compare");
+  function openCompare(origin) {
+    var cars = Array.from(state.cmp).map(function (id) { return byId[id]; });
+    if (cars.length < 2) return;
+    function best(key, low) {
+      var vals = cars.map(function (c) { return c[key]; });
+      return low ? Math.min.apply(null, vals) : Math.max.apply(null, vals);
+    }
+    function numRow(label, key, low, tag, unit) {
+      var top = Math.max.apply(null, cars.map(function (c) { return c[key]; }));
+      var b = best(key, low);
+      var minV = Math.min.apply(null, cars.map(function (c) { return c[key]; }));
+      return "<tr><th scope=\"row\">" + label + "</th>" + cars.map(function (c) {
+        var w = key === "year" ? 40 + 60 * (c.year - minV + 1) / (top - minV + 1) : 100 * c[key] / top;
+        return '<td><span class="cmp-val">' + (key === "year" ? c.year : fmt(c[key]) + unit) + '</span><div class="bar"><i style="width:' + w.toFixed(1) + '%"></i></div>' +
+          (c[key] === b && cars.filter(function (x) { return x[key] === b; }).length === 1 ? '<span class="best">' + tag + "</span>" : "") + "</td>";
+      }).join("") + "</tr>";
+    }
+    function txtRow(label, key) {
+      return "<tr><th scope=\"row\">" + label + "</th>" + cars.map(function (c) { return "<td>" + esc(c[key]) + "</td>"; }).join("") + "</tr>";
+    }
+    lastFocus = document.activeElement;
+    cmpDlg.innerHTML =
+      '<div class="close-row"><button class="close" type="button" data-close aria-label="Fermer">' + ICON.xl + "</button></div>" +
+      '<div class="cmp-wrap"><h2 class="cmp-title" id="cmp-title">Comparaison</h2><div class="cmp-scroll"><table class="cmp-table">' +
+      '<thead><tr><th scope="col"><span class="sr">Critère</span></th>' + cars.map(function (c) {
+        return '<th scope="col"><div class="cmp-mini">' + carSVG(c, "cmp-" + c.id, false) + "</div>" + esc(c.brand + " " + c.model) + "</th>";
+      }).join("") + "</tr></thead><tbody>" +
+      numRow("Prix", "price", true, "Moins chère", " Ar") +
+      numRow("Année", "year", false, "Plus récente", "") +
+      numRow("Kilométrage", "km", true, "Moins de km", " km") +
+      txtRow("Carburant", "fuel") + txtRow("Boîte", "gear") + txtRow("Ville", "city") +
+      "<tr><th scope=\"row\"></th>" + cars.map(function (c) { return '<td><button class="btn btn-ink btn-sm" type="button" data-open="' + c.id + '">Voir la fiche</button></td>'; }).join("") + "</tr>" +
+      "</tbody></table></div></div>";
+    cmpDlg.showModal();
+    popIn(cmpDlg, origin);
+    if (!reduce) cmpDlg.querySelectorAll(".bar i").forEach(function (b, k) {
+      b.animate([{ transform: "scaleX(0)" }, { transform: "scaleX(1)" }], { duration: 700, delay: 200 + k * 40, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" });
+    });
+  }
+  cmpDlg.addEventListener("click", function (e) {
+    if (e.target === cmpDlg || e.target.closest("[data-close]")) { cmpDlg.close(); return; }
+    var o = e.target.closest("[data-open]");
+    if (o) { var id = o.getAttribute("data-open"); cmpDlg.close(); openDetail(id, null, false); }
+  });
+
+  /* ---------- Fiche voiture ---------- */
+  var dlg = $("detail"), lastFocus = null;
+  function popIn(d, origin) {
+    if (reduce) return;
+    var b = d.getBoundingClientRect();
+    if (origin) {
+      var a = origin.getBoundingClientRect();
+      var s = Math.max(0.15, Math.min(1, a.width / b.width));
+      var dx = (a.left + a.width / 2) - (b.left + b.width / 2);
+      var dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+      d.animate([{ transform: "translate(" + dx + "px," + dy + "px) scale(" + s + ")", opacity: 0.2 }, { transform: "none", opacity: 1 }], { duration: 520, easing: "cubic-bezier(.2,.8,.2,1)" });
+    } else {
+      d.animate([{ transform: "translateY(30px) scale(.97)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 380, easing: "cubic-bezier(.2,.8,.2,1)" });
+    }
+  }
+  [dlg, cmpDlg].forEach(function (d) {
+    d.addEventListener("close", function () {
+      if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
+    });
+  });
+
+  function openDetail(id, origin, toBooking) {
+    var c = byId[id];
+    if (!c) return;
+    if (dlg.open) dlg.close();
+    lastFocus = document.activeElement;
+    var days = [], d0 = new Date();
+    for (var i = 1; i <= 7; i++) {
+      var d = new Date(d0.getFullYear(), d0.getMonth(), d0.getDate() + i);
+      days.push({
+        short: d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" }),
+        long: d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+      });
+    }
+    var times = ["9 h 00", "10 h 30", "14 h 00", "16 h 30"];
+    dlg.style.setProperty("--c", c.color);
+    dlg.innerHTML =
+      '<div class="close-row"><button class="close" type="button" data-close aria-label="Fermer">' + ICON.xl + "</button></div>" +
+      '<div class="sheet">' +
+        '<div class="sheet-left">' +
+          (c.badge ? '<p class="d-badge">' + esc(c.badge) + "</p>" : "") +
+          '<h2 class="d-title" id="d-title">' + esc(c.brand + " " + c.model) + "</h2>" +
+          '<div class="d-car">' + carSVG(c, "d-" + c.id) + "</div>" +
+          '<dl class="d-specs">' +
+            "<div><dt>Année</dt><dd>" + c.year + "</dd></div>" +
+            "<div><dt>Kilométrage</dt><dd>" + fmt(c.km) + " km</dd></div>" +
+            "<div><dt>Carburant</dt><dd>" + esc(c.fuel) + "</dd></div>" +
+            "<div><dt>Boîte</dt><dd>" + esc(c.gear) + "</dd></div>" +
+            "<div><dt>Ville</dt><dd>" + esc(c.city) + "</dd></div>" +
+            "<div><dt>Type</dt><dd>" + BODY_LABEL[c.body] + "</dd></div>" +
+          "</dl>" +
+          '<div><h3 class="d-h3">Historique</h3><ul class="d-hist">' + c.history.map(function (h) { return "<li>" + ICON.check + "<span>" + esc(h) + "</span></li>"; }).join("") + "</ul></div>" +
+          '<div><button class="btn btn-ink" type="button" data-studio>' + ICON.turn + "Faire le tour en 3D</button></div>" +
+        "</div>" +
+        '<div class="sheet-right">' +
+          '<div><p class="d-price">' + fmt(c.price) + ' Ar</p><p class="d-note">Prix de vente</p></div>' +
+          '<section aria-labelledby="fin-h"><h3 class="d-h3" id="fin-h">Payer en plusieurs fois</h3>' +
+            '<div class="fin-row"><label class="lbl" for="f-ap">Apport <output id="o-ap" for="f-ap"></output></label><input type="range" id="f-ap" min="0" max="50" step="5" value="20"></div>' +
+            '<div class="fin-row"><label class="lbl" for="f-du">Durée <output id="o-du" for="f-du"></output></label><input type="range" id="f-du" min="12" max="72" step="12" value="48"></div>' +
+            '<div class="fin-row"><label class="lbl" for="f-tx">Taux annuel (exemple à adapter) <output id="o-tx" for="f-tx"></output></label><input type="range" id="f-tx" min="0" max="20" step="0.5" value="12"></div>' +
+            '<p class="fin-result"><strong id="f-m" data-v="0">0</strong><span>Ar par mois</span></p>' +
+            '<p class="d-note">Simulation indicative. Le vrai taux dépend de ton dossier.</p>' +
+          "</section>" +
+          '<section id="book" aria-labelledby="book-h"><h3 class="d-h3" id="book-h">Réserver un essai</h3>' +
+            '<p class="d-label" id="day-l">Jour</p><div class="slots" role="group" aria-labelledby="day-l">' +
+              days.map(function (x, k) { return '<button type="button" class="slot" data-day="' + k + '" aria-pressed="false">' + esc(x.short) + "</button>"; }).join("") +
+            "</div>" +
+            '<p class="d-label" id="time-l">Heure</p><div class="slots" role="group" aria-labelledby="time-l">' +
+              times.map(function (t, k) { return '<button type="button" class="slot" data-time="' + k + '" aria-pressed="false">' + t + "</button>"; }).join("") +
+            "</div>" +
+            '<div class="fields"><label class="field">Ton prénom<input id="b-name" type="text" autocomplete="given-name"></label>' +
+            '<label class="field">Ton téléphone<input id="b-tel" type="tel" autocomplete="tel"></label></div>' +
+            '<p class="error" id="b-err" role="alert"></p>' +
+            '<button class="btn btn-lane" type="button" id="b-go">Réserver l\'essai</button>' +
+          "</section>" +
+        "</div>" +
+      "</div>";
+
+    var pick = { day: -1, time: -1 };
+    function fin() {
+      var ap = Number($("f-ap").value), du = Number($("f-du").value), tx = Number($("f-tx").value);
+      $("o-ap").textContent = ap + " % (" + fmt(c.price * ap / 100) + " Ar)";
+      $("o-du").textContent = du + " mois";
+      $("o-tx").textContent = String(tx).replace(".", ",") + " %";
+      tween($("f-m"), monthly(c.price, ap, du, tx), 420, function (v) { return fmt(Math.round(v / 1000) * 1000); });
+    }
+    ["f-ap", "f-du", "f-tx"].forEach(function (k) { $(k).addEventListener("input", fin); });
+    fin();
+
+    dlg.onclick = function (e) {
+      if (e.target === dlg || e.target.closest("[data-close]")) { dlg.close(); return; }
+      if (e.target.closest("[data-studio]")) { dlg.close(); sendToStudio(id); return; }
+      var s = e.target.closest(".slot");
+      if (s) {
+        var key = s.hasAttribute("data-day") ? "day" : "time";
+        pick[key] = Number(s.getAttribute("data-" + key));
+        s.parentNode.querySelectorAll(".slot").forEach(function (x) { x.setAttribute("aria-pressed", String(x === s)); });
+        return;
+      }
+      if (e.target.closest("#b-go")) {
+        var name = $("b-name").value.trim(), tel = $("b-tel").value.trim();
+        var missing = [];
+        if (pick.day < 0) missing.push("un jour");
+        if (pick.time < 0) missing.push("une heure");
+        if (!name) missing.push("ton prénom");
+        if (!tel) missing.push("ton téléphone");
+        if (missing.length) {
+          $("b-err").textContent = "Il manque " + missing.join(", ").replace(/, ([^,]*)$/, " et $1") + ".";
+          return;
+        }
+        var btn = $("b-go"), rect = btn.getBoundingClientRect();
+        dlg.close();
+        toast("Essai réservé : " + c.brand + " " + c.model + ", " + days[pick.day].long + " à " + times[pick.time] + ".");
+        confetti(rect.left + rect.width / 2, rect.top + rect.height / 2, [c.color, "#FFC72C", "#FFFFFF", "#2B2F36"]);
+      }
+    };
+
+    dlg.showModal();
+    dlg.scrollTop = 0;
+    popIn(dlg, origin);
+    if (toBooking) {
+      setTimeout(function () {
+        $("book").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+        var firstDay = dlg.querySelector("[data-day]");
+        if (firstDay) firstDay.focus({ preventScroll: true });
+      }, reduce ? 0 : 420);
+    }
+  }
+
+  /* ---------- Vendre ---------- */
+  $("sell-form").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = e.currentTarget, err = $("sell-err");
+    if (!f.model.value.trim() || !f.tel.value.trim()) {
+      err.textContent = "Indique au moins la marque, le modèle et ton téléphone.";
+      return;
+    }
+    err.textContent = "";
+    var r = f.querySelector('[type="submit"]').getBoundingClientRect();
+    toast("Demande envoyée. On te rappelle avec une estimation.");
+    confetti(r.left + r.width / 2, r.top + r.height / 2, ["#FFC72C", "#2B2F36", "#FFFFFF"]);
+    f.reset();
+  });
+
+  /* ---------- Message et confettis ---------- */
+  var toastEl = $("toast"), toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("show"); }, 4500);
+  }
+  function confetti(x, y, colors) {
+    if (reduce) return;
+    var cv = document.createElement("canvas"), dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:300";
+    cv.width = innerWidth * dpr; cv.height = innerHeight * dpr;
+    document.body.appendChild(cv);
+    var g = cv.getContext("2d");
+    g.scale(dpr, dpr);
+    var parts = [];
+    for (var i = 0; i < 150; i++) {
+      var ang = -Math.PI / 2 + (Math.random() - 0.5) * 1.9, sp = 7 + Math.random() * 10;
+      parts.push({ x: x, y: y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, w: 6 + Math.random() * 7, h: 4 + Math.random() * 5, r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4, c: colors[i % colors.length] });
+    }
+    var t0 = performance.now();
+    (function frame(now) {
+      var t = now - t0;
+      g.clearRect(0, 0, innerWidth, innerHeight);
+      parts.forEach(function (p) {
+        p.vy += 0.32; p.vx *= 0.985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+        g.save(); g.translate(p.x, p.y); g.rotate(p.r);
+        g.globalAlpha = Math.max(0, 1 - t / 1800);
+        g.fillStyle = p.c; g.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        g.restore();
+      });
+      if (t < 1800) requestAnimationFrame(frame); else cv.remove();
+    })(t0);
+  }
+
+  /* ---------- Départ ---------- */
+  $("year").textContent = new Date().getFullYear();
+  setStudio(state.studio, true);
+  render(true);
+  updateTray();
+})();
+</script>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+
+const THREE_BASE = "https://cdn.jsdelivr.net/npm/three@0.160.0/";
+const stage = document.getElementById("stage");
+const hero = document.getElementById("hero");
+const hint = document.getElementById("drag-hint");
+const note = document.getElementById("studio-note");
+const dropZone = document.getElementById("drop-zone");
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const coarse = matchMedia("(pointer: coarse)").matches;
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- Rendu ---------- */
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setClearColor(0x000000, 0);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.domElement.setAttribute("role", "img");
+renderer.domElement.setAttribute("aria-label", "Voiture en 3D. Clique et glisse pour la faire tourner.");
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa3b2, 0.6));
+const key = new THREE.DirectionalLight(0xffffff, 2.2);
+key.position.set(4, 8, 5);
+scene.add(key);
+const back = new THREE.DirectionalLight(0xffffff, 1.2);
+back.position.set(-6, 4, -5);
+scene.add(back);
+
+const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+camera.position.set(7.4, 2.7, 8.2);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 0.8, 0);
+controls.enableZoom = false;
+controls.enablePan = false;
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+controls.minPolarAngle = 0.95;
+controls.maxPolarAngle = 1.48;
+controls.autoRotate = !reduce;
+controls.autoRotateSpeed = 0.8;
+if (coarse) {
+  controls.enabled = false;
+  renderer.domElement.style.touchAction = "pan-y";
+}
+let resumeTimer;
+controls.addEventListener("start", () => {
+  if (hint) hint.classList.add("off");
+  controls.autoRotate = false;
+  clearTimeout(resumeTimer);
+});
+controls.addEventListener("end", () => {
+  resumeTimer = setTimeout(() => { controls.autoRotate = !reduce; }, 2500);
+});
+
+/* ---------- Plateau du studio ---------- */
+const table = new THREE.Group();
+scene.add(table);
+const disc = new THREE.Mesh(
+  new THREE.CylinderGeometry(3.2, 3.2, 0.06, 128),
+  new THREE.MeshStandardMaterial({ color: 0xf3f4f6, roughness: 0.5, metalness: 0 })
+);
+disc.position.y = -0.031;
+table.add(disc);
+const ring = new THREE.Mesh(new THREE.RingGeometry(3.02, 3.07, 128), new THREE.MeshBasicMaterial({ color: 0xc9cdd4 }));
+ring.rotation.x = -Math.PI / 2;
+ring.position.y = 0.002;
+table.add(ring);
+
+const shadowTex = (() => {
+  const c = document.createElement("canvas");
+  c.width = c.height = 256;
+  const g = c.getContext("2d");
+  const grd = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grd.addColorStop(0, "rgba(0,0,0,0.6)");
+  grd.addColorStop(0.55, "rgba(0,0,0,0.28)");
+  grd.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(c);
+})();
+
+/* ---------- Matières de la voiture simplifiée ---------- */
+const M = {
+  glass: new THREE.MeshPhysicalMaterial({ color: 0x121a24, metalness: 0.2, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.03 }),
+  trim: new THREE.MeshStandardMaterial({ color: 0x16181c, roughness: 0.55, metalness: 0.3 }),
+  rubber: new THREE.MeshStandardMaterial({ color: 0x121315, roughness: 0.9, metalness: 0 }),
+  rim: new THREE.MeshStandardMaterial({ color: 0xd3d8df, roughness: 0.2, metalness: 1 }),
+  rimDark: new THREE.MeshStandardMaterial({ color: 0x2a2e35, roughness: 0.4, metalness: 0.8 }),
+  head: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2d0, emissiveIntensity: 2.5 }),
+  tail: new THREE.MeshStandardMaterial({ color: 0x400000, emissive: 0xff2414, emissiveIntensity: 2.4 }),
+  shadow: new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false })
+};
+
+/* ---------- Silhouettes de la voiture simplifiée (en mètres, l'avant vers +x) ---------- */
+const P = {
+  coupe: {
+    len: 4.45, rw: 0.33, ra: 0.44, wf: 1.38, wr: -1.32, bottom: 0.2, bodyW: 1.8, cabW: 1.38,
+    lower: [[2.12, 0.2], [2.2, 0.38], [2.19, 0.6], [2.0, 0.74], [1.5, 0.83], [0.8, 0.88], [0, 0.9], [-1.0, 0.92], [-1.7, 0.94], [-2.06, 0.9], [-2.19, 0.74], [-2.18, 0.4], [-2.1, 0.2]],
+    cabin: [[0.95, 0.84], [0.7, 1.0], [0.36, 1.18], [0.0, 1.28], [-0.5, 1.30], [-1.0, 1.24], [-1.45, 1.06], [-1.78, 0.9], [-1.78, 0.84]],
+    roof: [[0.3, 1.205], [0.0, 1.28], [-0.5, 1.30], [-0.95, 1.245]],
+    bp: [-0.4, 0.92, 1.3], mirror: [0.82, 0.98], head: [2.24, 0.62], tail: [-2.25, 0.8], grille: [2.22, 0.36]
+  },
+  suv: {
+    len: 4.7, rw: 0.38, ra: 0.5, wf: 1.42, wr: -1.38, bottom: 0.3, bodyW: 1.92, cabW: 1.62,
+    lower: [[2.24, 0.3], [2.32, 0.52], [2.31, 0.86], [2.12, 1.0], [1.5, 1.06], [0.5, 1.1], [-1.0, 1.12], [-2.0, 1.13], [-2.28, 1.06], [-2.32, 0.7], [-2.25, 0.3]],
+    cabin: [[1.42, 1.04], [1.12, 1.28], [0.78, 1.58], [0.42, 1.68], [-0.6, 1.70], [-1.6, 1.69], [-2.06, 1.62], [-2.2, 1.36], [-2.22, 1.08], [-2.22, 1.04]],
+    roof: [[0.6, 1.64], [0.42, 1.68], [-0.6, 1.70], [-1.6, 1.69], [-2.0, 1.635]],
+    bp: [-0.3, 1.1, 1.7], mirror: [1.22, 1.2], head: [2.38, 0.9], tail: [-2.38, 1.0], grille: [2.36, 0.62], rails: true
+  },
+  hatch: {
+    len: 4.0, rw: 0.31, ra: 0.42, wf: 1.22, wr: -1.2, bottom: 0.2, bodyW: 1.72, cabW: 1.36,
+    lower: [[1.92, 0.2], [1.98, 0.38], [1.96, 0.6], [1.75, 0.74], [1.2, 0.82], [0.4, 0.86], [-0.8, 0.89], [-1.6, 0.92], [-1.92, 0.86], [-1.96, 0.5], [-1.9, 0.2]],
+    cabin: [[1.0, 0.82], [0.75, 1.02], [0.42, 1.3], [0.05, 1.42], [-0.9, 1.44], [-1.5, 1.4], [-1.8, 1.18], [-1.88, 0.92], [-1.88, 0.86]],
+    roof: [[0.32, 1.34], [0.05, 1.42], [-0.9, 1.44], [-1.45, 1.405]],
+    bp: [-0.35, 0.9, 1.44], mirror: [0.86, 0.98], head: [2.03, 0.62], tail: [-2.02, 0.84], grille: [2.02, 0.36]
+  },
+  pickup: {
+    len: 5.4, rw: 0.39, ra: 0.51, wf: 1.62, wr: -1.56, bottom: 0.3, bodyW: 1.94, cabW: 1.64,
+    lower: [[2.55, 0.3], [2.63, 0.55], [2.62, 0.92], [2.42, 1.05], [1.8, 1.11], [1.0, 1.13], [0, 1.15], [-1.5, 1.16], [-2.5, 1.16], [-2.63, 1.1], [-2.64, 0.6], [-2.57, 0.3]],
+    cabin: [[1.48, 1.08], [1.16, 1.32], [0.82, 1.68], [0.46, 1.78], [-0.6, 1.80], [-0.86, 1.74], [-0.94, 1.42], [-0.95, 1.12], [-0.95, 1.08]],
+    roof: [[0.62, 1.745], [0.46, 1.78], [-0.6, 1.80], [-0.8, 1.765]],
+    bp: [0.1, 1.14, 1.8], mirror: [1.3, 1.24], head: [2.69, 0.95], tail: [-2.7, 0.98], grille: [2.68, 0.66], bed: true
+  }
+};
+
+const V = (x, y) => new THREE.Vector2(x, y);
+
+function lowerShape(p) {
+  const s = new THREE.Shape();
+  const pts = p.lower;
+  s.moveTo(pts[0][0], pts[0][1]);
+  s.splineThru(pts.slice(1).map(([x, y]) => V(x, y)));
+  const cy = p.rw, yb = p.bottom;
+  const th = Math.asin((yb - cy) / p.ra);
+  s.lineTo(p.wr - p.ra * Math.cos(th), yb);
+  s.absarc(p.wr, cy, p.ra, Math.PI - th, th, true);
+  s.lineTo(p.wf - p.ra * Math.cos(th), yb);
+  s.absarc(p.wf, cy, p.ra, Math.PI - th, th, true);
+  s.lineTo(pts[0][0], pts[0][1]);
+  return s;
+}
+function smoothShape(pts) {
+  const s = new THREE.Shape();
+  s.moveTo(pts[0][0], pts[0][1]);
+  s.splineThru(pts.slice(1, -1).map(([x, y]) => V(x, y)));
+  const l = pts[pts.length - 1];
+  s.lineTo(l[0], l[1]);
+  s.closePath();
+  return s;
+}
+function roofShape(pts) {
+  const up = pts.map(([x, y]) => V(x, y + 0.06));
+  const lo = pts.map(([x, y]) => V(x, y - 0.04)).reverse();
+  const s = new THREE.Shape();
+  s.moveTo(up[0].x, up[0].y);
+  s.splineThru(up.slice(1));
+  s.lineTo(lo[0].x, lo[0].y);
+  s.splineThru(lo.slice(1));
+  s.closePath();
+  return s;
+}
+function extrude(shape, width, bevel, mat) {
+  const depth = Math.max(0.01, width - bevel * 2);
+  const g = new THREE.ExtrudeGeometry(shape, {
+    depth, bevelEnabled: true, bevelThickness: bevel, bevelSize: bevel * 0.7,
+    bevelSegments: 6, curveSegments: 40
+  });
+  g.translate(0, 0, -depth / 2);
+  return new THREE.Mesh(g, mat);
+}
+function box(w, h, d, mat, x, y, z) {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.position.set(x, y, z);
+  return m;
+}
+function wheel(rw, side) {
+  const g = new THREE.Group();
+  const spin = new THREE.Group();
+  g.add(spin);
+  const tw = 0.27;
+  const tire = new THREE.Mesh(new THREE.CylinderGeometry(rw - 0.02, rw - 0.02, tw - 0.06, 48), M.rubber);
+  tire.rotation.x = Math.PI / 2;
+  spin.add(tire);
+  [-1, 1].forEach((s) => {
+    const t = new THREE.Mesh(new THREE.TorusGeometry(rw - 0.05, 0.05, 14, 48), M.rubber);
+    t.position.z = s * (tw / 2 - 0.05);
+    spin.add(t);
+  });
+  const rimR = rw * 0.64;
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(rimR, rimR, 0.04, 40), M.rimDark);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.z = tw / 2 - 0.02;
+  spin.add(barrel);
+  for (let k = 0; k < 5; k++) {
+    const a = (k * 2 * Math.PI) / 5;
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(0.07, rimR * 0.95, 0.035), M.rim);
+    sp.position.set(-Math.sin(a) * rimR * 0.47, Math.cos(a) * rimR * 0.47, tw / 2 + 0.005);
+    sp.rotation.z = a;
+    spin.add(sp);
+  }
+  const lip = new THREE.Mesh(new THREE.TorusGeometry(rimR, 0.022, 8, 48), M.rim);
+  lip.position.z = tw / 2;
+  spin.add(lip);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(rw * 0.13, rw * 0.13, 0.05, 24), M.rim);
+  hub.rotation.x = Math.PI / 2;
+  hub.position.z = tw / 2 + 0.01;
+  spin.add(hub);
+  if (side < 0) g.rotation.y = Math.PI;
+  return { g, spin, side };
+}
+function lum(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+}
+
+function buildToyCar(data) {
+  const p = P[data.shape] || P.suv;
+  const paint = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(data.color),
+    metalness: lum(data.color) > 0.6 ? 0.1 : 0.5,
+    roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05
+  });
+  const group = new THREE.Group();
+  group.add(extrude(lowerShape(p), p.bodyW, 0.1, paint));
+  group.add(extrude(smoothShape(p.cabin), p.cabW, 0.05, M.glass));
+  group.add(extrude(roofShape(p.roof), p.cabW + 0.05, 0.025, paint));
+  group.add(box(0.1, p.bp[2] - p.bp[1], p.cabW + 0.04, paint, p.bp[0], (p.bp[1] + p.bp[2]) / 2, 0));
+
+  const zm = p.cabW / 2 + 0.1;
+  group.add(box(0.16, 0.09, 0.16, paint, p.mirror[0], p.mirror[1], zm));
+  group.add(box(0.16, 0.09, 0.16, paint, p.mirror[0], p.mirror[1], -zm));
+
+  const zh = p.bodyW / 2 - 0.3;
+  group.add(box(0.1, 0.075, 0.42, M.head, p.head[0], p.head[1], zh));
+  group.add(box(0.1, 0.075, 0.42, M.head, p.head[0], p.head[1], -zh));
+  group.add(box(0.1, 0.06, p.bodyW - 0.24, M.tail, p.tail[0], p.tail[1], 0));
+  group.add(box(0.08, 0.2, p.bodyW * 0.5, M.trim, p.grille[0], p.grille[1], 0));
+
+  if (p.rails) {
+    const y = 1.70 + 0.1;
+    group.add(box(2.1, 0.04, 0.05, M.trim, -0.75, y, p.cabW / 2 - 0.12));
+    group.add(box(2.1, 0.04, 0.05, M.trim, -0.75, y, -(p.cabW / 2 - 0.12)));
+  }
+  if (p.bed) {
+    group.add(box(1.45, 0.02, p.bodyW - 0.3, M.trim, -1.76, 1.16 + 0.075, 0));
+    group.add(box(0.03, 0.5, p.bodyW + 0.01, M.trim, -1.0, 0.92, 0));
+  }
+
+  const wheels = [];
+  const zw = p.bodyW / 2 - 0.17;
+  [[p.wf, 1], [p.wf, -1], [p.wr, 1], [p.wr, -1]].forEach(([x, side]) => {
+    const w = wheel(p.rw, side);
+    w.g.position.set(x, p.rw, side * zw);
+    group.add(w.g);
+    wheels.push({ spin: w.spin, side, r: p.rw });
+  });
+
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), M.shadow);
+  sh.rotation.x = -Math.PI / 2;
+  sh.position.y = 0.004;
+  sh.scale.set(p.len * 1.25, p.bodyW * 1.9, 1);
+  group.add(sh);
+
+  return { id: data.id, group, wheels, paint, toy: true };
+}
+function disposeToy(car) {
+  car.group.traverse((o) => { if (o.isMesh && o.material !== M.shadow) o.geometry.dispose(); });
+  car.paint.dispose();
+}
+
+/* ---------- Vraies voitures 3D (fichiers .glb) ---------- */
+const draco = new DRACOLoader();
+draco.setDecoderPath(THREE_BASE + "examples/jsm/libs/draco/gltf/");
+const loader = new GLTFLoader();
+loader.setDRACOLoader(draco);
+loader.setMeshoptDecoder(MeshoptDecoder);
+
+// Longueur réelle (en mètres) utilisée si "len3d" n'est pas indiqué pour la voiture.
+const LEN = { suv: 4.6, hatch: 3.95, coupe: 4.45, pickup: 5.3 };
+const cache = new Map(); // id de la voiture -> voiture 3D prête, ou "fail"
+
+function showNote(html) {
+  if (!html) { note.hidden = true; return; }
+  note.innerHTML = html;
+  note.hidden = false;
+}
+function progressNote(pct) {
+  return 'Chargement de la voiture 3D <span class="bar3d"><i style="width:' + pct + '%"></i></span> ' + pct + " %";
+}
+
+// Met n'importe quel modèle à la bonne taille, posé au sol, au centre du plateau, l'avant vers +x.
+function prepareModel(root, data) {
+  const group = new THREE.Group();
+  const pivot = new THREE.Group();
+  pivot.add(root);
+  group.add(pivot);
+  const bbox = new THREE.Box3();
+  const size = new THREE.Vector3();
+  function measure() {
+    group.updateMatrixWorld(true);
+    bbox.setFromObject(pivot);
+    bbox.getSize(size);
+  }
+  function recenter() {
+    pivot.position.set(0, 0, 0);
+    measure();
+    const c = bbox.getCenter(new THREE.Vector3());
+    pivot.position.set(-c.x, -bbox.min.y, -c.z);
+    measure();
+  }
+
+  measure();
+  if (size.z > size.x) pivot.rotation.y = Math.PI / 2;          // la longueur de la voiture le long de x
+  measure();
+  pivot.scale.setScalar((Number(data.len3d) || LEN[data.shape] || 4.5) / Math.max(size.x, 1e-6));
+  recenter();
+  if (guessFront(root) < 0) { pivot.rotation.y += Math.PI; recenter(); }   // l'avant vers +x
+  if (Number(data.rotate3d)) { pivot.rotation.y += THREE.MathUtils.degToRad(Number(data.rotate3d)); recenter(); }
+
+  const sh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), M.shadow);
+  sh.rotation.x = -Math.PI / 2;
+  sh.position.y = 0.004;
+  sh.scale.set(size.x * 1.25, size.z * 1.9, 1);
+  group.add(sh);
+
+  return { id: data.id, group, wheels: findWheels(root, group), real: true, credit: data.credit3d || "", creditUrl: data.credit3dUrl || "" };
+}
+
+// Devine de quel côté est l'avant : avec le nom des roues (avant / arrière), sinon avec la place du volant.
+// Renvoie 1 si l'avant est vers +x, -1 s'il est vers -x, 0 si on ne sait pas.
+function guessFront(root) {
+  const FRONT = ["front", "avant", "av", "avg", "avd", "fl", "fr", "lf", "rf"];
+  const REAR = ["rear", "back", "arriere", "ar", "arg", "ard", "rl", "rr", "bl", "br", "lr", "lb", "rb"];
+  const front = [], rear = [], b = new THREE.Box3(), c = new THREE.Vector3();
+  let steer = null;
+  root.traverse((o) => {
+    const name = o.name || "";
+    if (!name) return;
+    const words = name.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z]+/);
+    const wheelish = /wheel|tire|tyre|roue|pneu|jante/i.test(name) || /(^|[^a-z])rim/i.test(name);
+    if (/steer|volant/i.test(name)) {
+      b.setFromObject(o);
+      if (!b.isEmpty()) steer = b.getCenter(new THREE.Vector3()).x;
+      return;
+    }
+    if (!wheelish) return;
+    b.setFromObject(o);
+    if (b.isEmpty()) return;
+    b.getCenter(c);
+    if (words.some((w) => FRONT.includes(w))) front.push(c.x);
+    else if (words.some((w) => REAR.includes(w))) rear.push(c.x);
+  });
+  const avg = (a) => a.reduce((s, v) => s + v, 0) / a.length;
+  if (front.length && rear.length) {
+    const d = avg(front) - avg(rear);
+    if (Math.abs(d) > 0.3) return d > 0 ? 1 : -1;
+  }
+  if (steer !== null && Math.abs(steer) > 0.15) return steer > 0 ? 1 : -1;
+  return 0;
+}
+
+// Cherche les roues dans le modèle (objets nommés wheel, tire, roue…) pour les faire tourner quand la voiture roule.
+function findWheels(root, group) {
+  const picked = [];
+  const pickedSet = new Set();
+  const b = new THREE.Box3(), sz = new THREE.Vector3(), ct = new THREE.Vector3();
+  root.traverse((o) => {
+    if (o === root) return;
+    const name = o.name || "";
+    const isWheel = /wheel|tire|tyre|roue|pneu|jante/i.test(name) || /(^|[^a-z])rim/i.test(name);
+    if (!isWheel || /steer|volant/i.test(name)) return;
+    for (let p = o.parent; p; p = p.parent) if (pickedSet.has(p)) return;
+    b.setFromObject(o);
+    if (b.isEmpty()) return;
+    b.getSize(sz);
+    b.getCenter(ct);
+    const looksLikeWheel = sz.y > 0.3 && sz.y < 1.2 && sz.x < 1.3 && sz.z < 0.75 && ct.y < 0.85 && Math.abs(sz.x - sz.y) < 0.35;
+    if (!looksLikeWheel) return;
+    picked.push({ o, center: ct.clone(), r: sz.y / 2 });
+    pickedSet.add(o);
+  });
+  if (!picked.length || picked.length > 16) return [];
+  return picked.map(({ o, center, r }) => {
+    const spin = new THREE.Group();
+    spin.position.copy(center);
+    group.add(spin);
+    group.updateMatrixWorld(true);
+    spin.attach(o);
+    return { spin, side: 1, r };
+  });
+}
+
+function loadModel(url) {
+  return new Promise((resolve, reject) => {
+    loader.load(url, (gltf) => resolve(gltf.scene), (ev) => {
+      if (ev.total) showNote(progressNote(Math.round((100 * ev.loaded) / ev.total)));
+    }, reject);
+  });
+}
+
+// Plan B : le même modèle rangé dans un fichier .js (modeles/tucson.js).
+// Une balise <script> marche même quand le site est ouvert en double-cliquant, contrairement au .glb.
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = () => { s.remove(); resolve(); };
+    s.onerror = () => { s.remove(); reject(new Error("introuvable : " + src)); };
+    document.head.appendChild(s);
+  });
+}
+async function loadModelFromScript(data) {
+  const src = data.model3d.replace(/\.glb$/i, ".js");
+  if (src === data.model3d) throw new Error("pas de fichier .js");
+  showNote("Chargement de la voiture 3D…");
+  await loadScript(src);
+  const store = window.CAR_MODELS || {};
+  const b64 = store[data.id];
+  if (!b64) throw new Error("le fichier " + src + " ne contient pas la voiture « " + data.id + " »");
+  delete store[data.id];
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  const gltf = await loader.parseAsync(bytes.buffer, "");
+  return gltf.scene;
+}
+
+const isLocal = location.protocol === "file:" || /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname);
+
+async function getCar(data) {
+  const hit = cache.get(data.id);
+  if (hit && hit !== "fail") return hit;
+  let problem = "";
+  if (data.model3d && hit !== "fail") {
+    showNote(progressNote(0));
+    try {
+      let scene3d;
+      try {
+        scene3d = await loadModel(data.model3d);
+      } catch (firstError) {
+        scene3d = await loadModelFromScript(data);
+      }
+      const car = prepareModel(scene3d, data);
+      cache.set(data.id, car);
+      return car;
+    } catch (err) {
+      cache.set(data.id, "fail");
+      problem = "Je ne trouve pas " + data.model3d + ". Dézippe tout le dossier, puis ouvre voitures.html qui est à côté du dossier « modeles ».";
+      console.warn("[Studio 3D] " + problem, err);
+    }
+  } else if (data.model3d && hit === "fail") {
+    problem = "Je ne trouve pas " + data.model3d + ".";
+  }
+  const toy = buildToyCar(data);
+  toy.problem = problem;
+  return toy;
+}
+
+function updateNote(car) {
+  if (car.toy && car.problem && isLocal) showNote(esc(car.problem));
+  else if (car.toy) showNote("Modèle 3D simplifié");
+  else if (car.credit) {
+    showNote("Modèle 3D : " + (car.creditUrl
+      ? '<a href="' + esc(car.creditUrl) + '" target="_blank" rel="noopener">' + esc(car.credit) + "</a>"
+      : esc(car.credit)));
+  }
+  else showNote("");
+}
+
+/* ---------- Arrivée et départ des voitures ---------- */
+const drives = [];
+const easeIn = (t) => t * t * t;
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+let current = null, busy = false, pending = null;
+
+function setDrive(car, x) {
+  car.group.position.x = x;
+  car.wheels.forEach((w) => { w.spin.rotation.z = (-w.side * x) / w.r; });
+}
+function removeCar(car) {
+  table.remove(car.group);
+  if (car.toy) disposeToy(car);
+}
+function drive(car, from, to, delay, dur, ease, done, brake) {
+  drives.push({ car, from, to, start: performance.now() + delay, dur, ease, done, brake });
+  car.group.rotation.z = 0;
+  setDrive(car, from);
+}
+async function show(data, force) {
+  if (!force && current && current.id === data.id) return;
+  if (busy) { pending = data; return; }
+  busy = true;
+  const next = await getCar(data);
+  if (next.group.parent) next.group.parent.remove(next.group);
+  table.add(next.group);
+  updateNote(next);
+  const finish = () => {
+    busy = false;
+    if (pending) { const p = pending; pending = null; show(p); }
+  };
+  const prev = current && current !== next ? current : null;
+  current = next;
+  if (reduce) {
+    if (prev) removeCar(prev);
+    setDrive(next, 0);
+    finish();
+    return;
+  }
+  if (prev) drive(prev, 0, 12, 0, 900, easeIn, () => removeCar(prev));
+  drive(next, -12, 0, prev ? 380 : 250, 1300, easeOut, finish, true);
+}
+function updateDrives(now) {
+  for (let i = drives.length - 1; i >= 0; i--) {
+    const d = drives[i];
+    if (now < d.start) continue;
+    const t = Math.min(1, (now - d.start) / d.dur);
+    setDrive(d.car, d.from + (d.to - d.from) * d.ease(t));
+    d.car.group.rotation.z = d.brake && t > 0.8 ? -0.03 * Math.sin(((t - 0.8) / 0.2) * Math.PI) : 0;
+    if (t >= 1) { drives.splice(i, 1); if (d.done) d.done(); }
+  }
+}
+
+/* ---------- Glisser un fichier .glb sur le studio pour l'essayer ---------- */
+let dragDepth = 0;
+const hasFiles = (e) => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes("Files");
+window.addEventListener("dragover", (e) => { if (hasFiles(e)) e.preventDefault(); });
+window.addEventListener("drop", (e) => { if (hasFiles(e)) e.preventDefault(); });
+hero.addEventListener("dragenter", (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth++;
+  const c = window.__studioCar;
+  dropZone.textContent = "Dépose ton fichier .glb pour l'essayer sur " + (c ? c.brand + " " + c.model : "cette voiture") + ".";
+  dropZone.hidden = false;
+});
+hero.addEventListener("dragleave", () => {
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (!dragDepth) dropZone.hidden = true;
+});
+hero.addEventListener("drop", async (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  dragDepth = 0;
+  dropZone.hidden = true;
+  const file = e.dataTransfer.files[0];
+  const data = window.__studioCar;
+  if (!file || !data) return;
+  if (!/\.glb$/i.test(file.name)) {
+    showNote("Il faut un fichier .glb (un seul fichier, pas un .gltf avec un dossier).");
+    return;
+  }
+  showNote("Ouverture de " + esc(file.name) + "…");
+  try {
+    const gltf = await loader.parseAsync(await file.arrayBuffer(), "");
+    const car = prepareModel(gltf.scene, Object.assign({}, data, { credit3d: file.name + " (aperçu)", credit3dUrl: "" }));
+    const old = cache.get(data.id);
+    if (old && old !== "fail" && old !== current) removeCar(old);
+    cache.set(data.id, car);
+    show(data, true);
+  } catch (err) {
+    console.warn("[Studio 3D]", err);
+    showNote("Ce fichier n'a pas pu être ouvert. Essaie un autre .glb.");
+  }
+});
+
+/* ---------- Cadrage ---------- */
+function frame() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  const aspect = w / h;
+  camera.aspect = aspect;
+  const t = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+  const dist = Math.max(13, 8.4 / (2 * t * aspect));
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  camera.position.copy(controls.target).addScaledVector(dir, dist);
+  if (w > 820) camera.setViewOffset(w, h, -w * 0.13, -h * 0.05, w, h);
+  else camera.clearViewOffset();
+  camera.updateProjectionMatrix();
+}
+new ResizeObserver(frame).observe(stage);
+frame();
+
+let onScreen = true;
+new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; }).observe(hero);
+
+let ready = false;
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (!onScreen) return;
+  controls.update();
+  updateDrives(now);
+  renderer.render(scene, camera);
+  if (!ready) { ready = true; document.body.classList.add("webgl-ready"); }
+}
+
+window.addEventListener("studio:car", (e) => show(e.detail));
+if (window.__studioCar) show(window.__studioCar);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>
