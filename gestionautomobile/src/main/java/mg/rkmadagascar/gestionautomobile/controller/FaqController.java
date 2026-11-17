@@ -1,43 +1,44 @@
 package mg.rkmadagascar.gestionautomobile.controller;
 
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.Faq;
 import mg.rkmadagascar.gestionautomobile.service.FaqService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/faqs")
 @RequiredArgsConstructor
 public class FaqController {
 
-    private final FaqService faqService;
+    private final FaqService service;
 
     @GetMapping
-    public List<Faq> findAll() {
-        return faqService.findAll();
+    public List<Faq> getAll() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public Faq findById(@PathVariable String id) {
-        return faqService.findById(id);
+    public Faq getById(@PathVariable String id) {
+        return service.findById(id);
     }
 
     @PostMapping
-    public ResponseEntity<Faq> creer(@RequestBody Faq faq) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(faqService.creer(faq));
+    public ResponseEntity<Faq> create(@RequestBody Faq entity) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(entity));
     }
 
     @PutMapping("/{id}")
-    public Faq modifier(@PathVariable String id, @RequestBody Faq faq) {
-        return faqService.modifier(id, faq);
+    public Faq update(@PathVariable String id, @RequestBody Faq entity) {
+        return service.update(id, entity);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimer(@PathVariable String id) {
-        faqService.supprimer(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

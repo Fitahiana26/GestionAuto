@@ -1,43 +1,44 @@
 package mg.rkmadagascar.gestionautomobile.controller;
 
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.Contact;
 import mg.rkmadagascar.gestionautomobile.service.ContactService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/contacts")
 @RequiredArgsConstructor
 public class ContactController {
 
-    private final ContactService contactService;
+    private final ContactService service;
 
     @GetMapping
-    public List<Contact> findAll() {
-        return contactService.findAll();
+    public List<Contact> getAll() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public Contact findById(@PathVariable String id) {
-        return contactService.findById(id);
+    public Contact getById(@PathVariable String id) {
+        return service.findById(id);
     }
 
     @PostMapping
-    public ResponseEntity<Contact> creer(@RequestBody Contact contact) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(contactService.creer(contact));
+    public ResponseEntity<Contact> create(@RequestBody Contact entity) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(entity));
     }
 
     @PutMapping("/{id}")
-    public Contact modifier(@PathVariable String id, @RequestBody Contact contact) {
-        return contactService.modifier(id, contact);
+    public Contact update(@PathVariable String id, @RequestBody Contact entity) {
+        return service.update(id, entity);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimer(@PathVariable String id) {
-        contactService.supprimer(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

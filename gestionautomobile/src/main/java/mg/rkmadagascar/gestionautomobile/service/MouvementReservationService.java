@@ -1,43 +1,48 @@
 package mg.rkmadagascar.gestionautomobile.service;
 
-import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.MouvementReservation;
 import mg.rkmadagascar.gestionautomobile.repository.MouvementReservationRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class MouvementReservationService {
 
-    private final MouvementReservationRepository mouvementReservationRepository;
+    private final MouvementReservationRepository repository;
 
+    @Transactional(readOnly = true)
     public List<MouvementReservation> findAll() {
-        return mouvementReservationRepository.findAll();
+        return repository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public MouvementReservation findById(String id) {
-        return mouvementReservationRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("MouvementReservation introuvable : " + id));
+        return repository.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "MouvementReservation introuvable : " + id));
     }
 
     @Transactional
-    public MouvementReservation creer(MouvementReservation mouvementReservation) {
-        return mouvementReservationRepository.save(mouvementReservation);
+    public MouvementReservation create(MouvementReservation entity) {
+        entity.setId(null);
+        return repository.save(entity);
     }
 
     @Transactional
-    public MouvementReservation modifier(String id, MouvementReservation mouvementReservation) {
+    public MouvementReservation update(String id, MouvementReservation entity) {
         findById(id);
-        mouvementReservation.setIdMvtReservation(id);
-        return mouvementReservationRepository.save(mouvementReservation);
+        entity.setId(id);
+        return repository.save(entity);
     }
 
     @Transactional
-    public void supprimer(String id) {
-        mouvementReservationRepository.delete(findById(id));
+    public void delete(String id) {
+        findById(id);
+        repository.deleteById(id);
     }
 }

@@ -1,43 +1,50 @@
 package mg.rkmadagascar.gestionautomobile.controller;
 
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.Reservation;
 import mg.rkmadagascar.gestionautomobile.service.ReservationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
 @RequiredArgsConstructor
 public class ReservationController {
 
-    private final ReservationService reservationService;
+    private final ReservationService service;
 
     @GetMapping
-    public List<Reservation> findAll() {
-        return reservationService.findAll();
+    public List<Reservation> getAll(Authentication authentication) {
+        return service.findAllForUser(authentication.getName(), isAdministrator(authentication));
     }
 
     @GetMapping("/{id}")
-    public Reservation findById(@PathVariable String id) {
-        return reservationService.findById(id);
+    public Reservation getById(@PathVariable String id, Authentication authentication) {
+        return service.findByIdForUser(id, authentication.getName(), isAdministrator(authentication));
     }
 
     @PostMapping
-    public ResponseEntity<Reservation> creer(@RequestBody Reservation reservation) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(reservationService.creer(reservation));
+    public ResponseEntity<Reservation> create(@RequestBody Reservation entity, Authentication authentication) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(entity, authentication.getName()));
     }
 
     @PutMapping("/{id}")
-    public Reservation modifier(@PathVariable String id, @RequestBody Reservation reservation) {
-        return reservationService.modifier(id, reservation);
+    public Reservation update(@PathVariable String id, @RequestBody Reservation entity) {
+        return service.update(id, entity);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimer(@PathVariable String id) {
-        reservationService.supprimer(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private boolean isAdministrator(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
     }
 }

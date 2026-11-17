@@ -1,23 +1,19 @@
 package mg.rkmadagascar.gestionautomobile.entity;
 
 import jakarta.persistence.*;
+import java.util.UUID;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Table(name = "contact")
 @Getter
 @Setter
-@NoArgsConstructor
 public class Contact {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
     @Column(name = "id_contact", length = 50)
-    private String idContact;
+    private String id;
 
     @Column(name = "nom", length = 50)
     private String nom;
@@ -37,7 +33,13 @@ public class Contact {
     @Column(name = "whatsapp", length = 50)
     private String whatsapp;
 
-    @Column(name = "maps", length = 50)
-    private String maps;
+    @Column(name = "maps_url", length = 50)
+    private String mapsUrl;
 
+    @PrePersist
+    void generateId() {
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
+    }
 }

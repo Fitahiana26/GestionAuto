@@ -1,31 +1,52 @@
-import { useEffect, useState } from "react";
-
-import type { Voitures } from "../types/Voitures";
+import { useEffect, useMemo, useState } from "react";
 import { getVoitures } from "../services/VoitureService";
+import type { Voiture, VoitureFiltres } from "../types/Voiture";
 
-export function useVoitures() {
-    const [voitures, setVoitures] = useState<Voitures[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
+export function useVoitures(filtres: VoitureFiltres = {}, onlyIds?: number[]) {
+  const [voitures, setVoitures] = useState<Voiture[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function chargerVoitures() {
-            try {
-                const data = await getVoitures();
-                setVoitures(data);
-            } catch (error) {
-                setError(
-                    error instanceof Error
-                        ? error.message
-                        : "Une erreur inconnue est survenue."
-                );
-            } finally {
-                setLoading(false);
-            }
+  const key = JSON.stringify(filtres);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function chargerVoitures() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await getVoitures(JSON.parse(key) as VoitureFiltres);
+
+        if (alive) {
+          setVoitures(data);
         }
+      } catch {
+        if (alive) {
+          setError("Impossible de charger les voitures.");
+        }
+      } finally {
+        if (alive) {
+          setLoading(false);
+        }
+      }
+    }
 
-        void chargerVoitures();
-    }, []);
+    chargerVoitures();
 
-    return { voitures, loading, error };
+    return () => {
+      alive = false;
+    };
+  }, [key]);
+
+  const list = useMemo(
+    () =>
+      onlyIds
+        ? voitures.filter((v) => onlyIds.includes(v.idVoiture))
+        : voitures,
+    [voitures, onlyIds],
+  );
+
+  return { voitures: list, loading, error };
 }

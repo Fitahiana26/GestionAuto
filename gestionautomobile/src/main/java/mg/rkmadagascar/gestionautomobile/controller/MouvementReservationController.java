@@ -1,43 +1,44 @@
 package mg.rkmadagascar.gestionautomobile.controller;
 
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.MouvementReservation;
 import mg.rkmadagascar.gestionautomobile.service.MouvementReservationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/api/mouvements-reservation")
+@RequestMapping("/api/mouvement-reservations")
 @RequiredArgsConstructor
 public class MouvementReservationController {
 
-    private final MouvementReservationService mouvementReservationService;
+    private final MouvementReservationService service;
 
     @GetMapping
-    public List<MouvementReservation> findAll() {
-        return mouvementReservationService.findAll();
+    public List<MouvementReservation> getAll() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public MouvementReservation findById(@PathVariable String id) {
-        return mouvementReservationService.findById(id);
+    public MouvementReservation getById(@PathVariable String id) {
+        return service.findById(id);
     }
 
     @PostMapping
-    public ResponseEntity<MouvementReservation> creer(@RequestBody MouvementReservation mouvementReservation) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(mouvementReservationService.creer(mouvementReservation));
+    public ResponseEntity<MouvementReservation> create(@RequestBody MouvementReservation entity) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(entity));
     }
 
     @PutMapping("/{id}")
-    public MouvementReservation modifier(@PathVariable String id, @RequestBody MouvementReservation mouvementReservation) {
-        return mouvementReservationService.modifier(id, mouvementReservation);
+    public MouvementReservation update(@PathVariable String id, @RequestBody MouvementReservation entity) {
+        return service.update(id, entity);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimer(@PathVariable String id) {
-        mouvementReservationService.supprimer(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

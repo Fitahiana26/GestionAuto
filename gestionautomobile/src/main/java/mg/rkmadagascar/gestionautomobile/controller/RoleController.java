@@ -1,43 +1,44 @@
 package mg.rkmadagascar.gestionautomobile.controller;
 
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.Role;
 import mg.rkmadagascar.gestionautomobile.service.RoleService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/roles")
 @RequiredArgsConstructor
 public class RoleController {
 
-    private final RoleService roleService;
+    private final RoleService service;
 
     @GetMapping
-    public List<Role> findAll() {
-        return roleService.findAll();
+    public List<Role> getAll() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public Role findById(@PathVariable String id) {
-        return roleService.findById(id);
+    public Role getById(@PathVariable String id) {
+        return service.findById(id);
     }
 
     @PostMapping
-    public ResponseEntity<Role> creer(@RequestBody Role role) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(roleService.creer(role));
+    public ResponseEntity<Role> create(@RequestBody Role entity) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.create(entity));
     }
 
     @PutMapping("/{id}")
-    public Role modifier(@PathVariable String id, @RequestBody Role role) {
-        return roleService.modifier(id, role);
+    public Role update(@PathVariable String id, @RequestBody Role entity) {
+        return service.update(id, entity);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> supprimer(@PathVariable String id) {
-        roleService.supprimer(id);
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        service.delete(id);
         return ResponseEntity.noContent().build();
     }
 }

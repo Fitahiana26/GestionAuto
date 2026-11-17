@@ -1,43 +1,48 @@
 package mg.rkmadagascar.gestionautomobile.service;
 
-import jakarta.persistence.EntityNotFoundException;
-import java.util.List;
-import lombok.RequiredArgsConstructor;
 import mg.rkmadagascar.gestionautomobile.entity.Contact;
 import mg.rkmadagascar.gestionautomobile.repository.ContactRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ContactService {
 
-    private final ContactRepository contactRepository;
+    private final ContactRepository repository;
 
+    @Transactional(readOnly = true)
     public List<Contact> findAll() {
-        return contactRepository.findAll();
+        return repository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Contact findById(String id) {
-        return contactRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Contact introuvable : " + id));
+        return repository.findById(id).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Contact introuvable : " + id));
     }
 
     @Transactional
-    public Contact creer(Contact contact) {
-        return contactRepository.save(contact);
+    public Contact create(Contact entity) {
+        entity.setId(null);
+        return repository.save(entity);
     }
 
     @Transactional
-    public Contact modifier(String id, Contact contact) {
+    public Contact update(String id, Contact entity) {
         findById(id);
-        contact.setIdContact(id);
-        return contactRepository.save(contact);
+        entity.setId(id);
+        return repository.save(entity);
     }
 
     @Transactional
-    public void supprimer(String id) {
-        contactRepository.delete(findById(id));
+    public void delete(String id) {
+        findById(id);
+        repository.deleteById(id);
     }
 }
